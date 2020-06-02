@@ -1,0 +1,4 @@
+#!/bin/bash
+sudo apt install qt5-default
+sudo apt install libqt5serialport5
+sudo apt install libqt5script5
