@@ -3,3 +3,4 @@ sudo apt install qt5-default
 sudo apt install libqt5serialport5
 sudo apt install libqt5script5
 sudo apt install libqt5qml5
+sudo apt install libqt5quickwidgets5
