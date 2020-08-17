@@ -18,7 +18,7 @@
                     <PWM index="0" Freq="2000" inv="0"/>
                 </outputs>
             </WLModulePWM>
-            <WLModuleConnect timeoutConnect_ms="5000" timeHeart_ms="00"/>
+            <WLModuleConnect timeoutConnect_ms="5000" timeHeart_ms="0"/>
             <WLModuleEncoder size="1">
                 <Encoder index="0"/>
             </WLModuleEncoder>
