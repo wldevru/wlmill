@@ -101,9 +101,8 @@ function M106()
 
 function M3()
 {
-//DIALOG.message("M3 шпиндель включен!",0);
-//MACHINE.enableSOut(1);
-MACHINE.setOutput(3,1); //WLM35A
+//MACHINE.enableSOut(1);//Включение ШИМ
+MACHINE.setOutput(3,1); //Дискретное включение шпинделя
 return 1;
 }
 
@@ -114,11 +113,8 @@ return 1;
 
 function M5()
 {
-//MACHINE.enableSOut(0)
-MACHINE.setOutput(3,0); //WLM35A
-//DIALOG.message("M5",0);
-//MACHINE.setOutput(3,1);
-//MACHINE.setOutput(3,0);
+//MACHINE.enableSOut(0) //Выключение ШИМ
+MACHINE.setOutput(3,0); //Дискретное выключение шпинделя
 return 1;
 }
 
@@ -254,6 +250,12 @@ function ON()
 }
 
 function OFF()
+{
+M5()
+M9()
+}
+
+function STOP()
 {
 M5()
 M9()
