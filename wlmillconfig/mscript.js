@@ -31,78 +31,25 @@ function M6()
 
 function M7()
 {
+MACHINE.setOutput(2,1);
 }
 
 function M8()
 {
+MACHINE.setOutput(3,1);
 }
 
 function M9()
 {
-}
-
-function M66()
-{
-}
-
-
-function M100()
-{
-}
-
-function M101()
-{
-}
-
-
-function M102()
-{
-var i
-var im
-var pos={X:100,Y:200,Z:300};
-
-DIALOG.message("Hello!",0);
-
-if(DIALOG.enterNum("Enter number"))
- { 
- im=DIALOG.num()
-  DIALOG.message(im.toString(),0);
-
-  for(i=0;i<im;i++)
-  {
-  iM++;
-  DOUT.tog(5);
-  DELAY(250);
-  } 
- }
-
-
-return pos;
-}
-
-
-function M103()
-{
-}
-
-
-function M104()
-{
-}
-
-function M105()
-{
-}
-
-
-function M106()
-{
+MACHINE.setOutput(2,0);
+MACHINE.setOutput(3,0);
 }
 
 function M3()
 {
-//MACHINE.enableSOut(1);//Включение ШИМ
-MACHINE.setOutput(3,1); //Дискретное включение шпинделя
+//DIALOG.message("M3 шпиндель включен!",0);
+MACHINE.enableSOut(1);
+//MACHINE.setOutput(1,1);
 return 1;
 }
 
@@ -113,8 +60,10 @@ return 1;
 
 function M5()
 {
-//MACHINE.enableSOut(0) //Выключение ШИМ
-MACHINE.setOutput(3,0); //Дискретное выключение шпинделя
+MACHINE.enableSOut(0)
+//DIALOG.message("M5",0);
+//MACHINE.setOutput(1,0);
+//MACHINE.setOutput(3,0);
 return 1;
 }
 
@@ -244,19 +193,41 @@ DIALOG.message("Сканирование успешно завершено!");
 return 1;
 }
 
+function userFunc2()
+{
+var front=!MACHINE.getInProbe()
+var Fprobe=50
+var T= GCODE.getT()
+var Zback=MACHINE.getCurPositionSC("Z")
+
+DIALOG.enterNum("Номер инструмента=")
+while(WAIT(DIALOG.isShow()));
+
+if(DIALOG.isOk()) 
+  T=DIALOG.getNum();
+else
+  return
+
+MACHINE.runGCode("G0 G53 Z0")
+MACHINE.runGCode("G0 G53 X73 Y421")
+MACHINE.runGCode("G0 G53 Z-10")
+while(WAIT(MACHINE.isActiv()));
+
+MACHINE.goDriveProbe("Z",0,400,0)
+while(WAIT(MACHINE.isActiv()));
+
+MACHINE.runGCode("G0 G53 Z0")
+while(WAIT(MACHINE.isActiv()));
+
+GCODE.setHTool(T,MACHINE.getProbePosition("Z",front))
+return 1;
+}
+
+
 function ON()
 {
-//DIALOG.message("Станок включён!");
 }
 
 function OFF()
 {
-M5()
-M9()
-}
-
-function STOP()
-{
-M5()
-M9()
 }
