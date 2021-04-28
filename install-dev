@@ -1,0 +1,7 @@
+#!/bin/bash
+sudo apt install qt5-default
+sudo apt install qtcreator
+sudo apt install qtdeclarative5-dev 
+sudo apt install libqt5serialport5-dev
+sudo apt install qtscript5-dev
+sudo apt install qtmultimedia5-dev
