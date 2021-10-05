@@ -211,6 +211,23 @@ MACHINE.runGCode("G0 X"+X.toString()+" Y"+Y.toString())
 while(MACHINE.isActiv());
 }
 
+function findPlane()//поиск плоскости 
+{
+var X
+var Y
+
+X=MACHINE.getCurPositionSC("X")
+Y=MACHINE.getCurPositionSC("Y")
+
+MACHINE.clearGProbe();
+MACHINE.addGProbeZ(X,Y,0,10);
+
+MACHINE.goGProbe();
+while(MACHINE.isActiv());
+
+MACHINE.setCurPositionSC("Z",MACHINE.getCurPositionSC("Z")-MACHINE.getGProbeSC(0,"Z"));
+}
+
 function findRot() //поиск поворота, щуп по середине прямой
 {
 var X
