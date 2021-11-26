@@ -50,7 +50,7 @@ WLToolBackDist=FILE.loadValue(WLToolFileINI,"BackDist",WLToolBackDist);
 WLToolSDStop  =FILE.loadValue(WLToolFileINI,"SDStop"  ,WLToolSDStop); 
 
 MACHINE.setF1GProbe(WLToolF1Probe)	
-MACHINE.setF2GProbe(WLToolF1Probe)	
+MACHINE.setF2GProbe(WLToolF2Probe)	
 MACHINE.setBackDistGProbe(WLToolBackDist)
 MACHINE.setSDStopGProbe(WLToolSDStop)
 

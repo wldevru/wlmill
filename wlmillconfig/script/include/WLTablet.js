@@ -44,7 +44,7 @@ WLTabletHeight  =FILE.loadValue(WLTabletFileINI,"Height"  ,WLTabletHeight);
 WLTabletSDStop  =FILE.loadValue(WLTabletFileINI,"SDStop"  ,WLTabletSDStop); 
 
 MACHINE.setF1GProbe(WLTabletF1Probe)	
-MACHINE.setF2GProbe(WLTabletF1Probe)	
+MACHINE.setF2GProbe(WLTabletF2Probe)	
 MACHINE.setBackDistGProbe(WLTabletBackDist)
 MACHINE.setSDStopGProbe(WLTabletSDStop)
 
