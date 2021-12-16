@@ -24,14 +24,14 @@
     Запоминаем машинные координаты точки контакта по Z (снизу справа).
 2.3 Вычисляем координату поверхности замера Z = Ztable(п2.2)-Htool(п2.1)-Hpad(толщина прокладки)"
 2.4 Также записываем координаты X и Y
-3 Записываем значения в файл "WLProbe.ini" в блок "HDialog" если его нет. То он будет сформирован после первого вызова замера (но замерне будет произведен)
+3 Записываем значения в файл "WLProbe.ini" в блок "AutoHDialog" если его нет. То он будет сформирован после первого вызова замера (но замерне будет произведен)
 
-[HDialog]
-Lmax=65   -максимальная длина щупа (как инструмента)
-X=38      -координаты
+[AutoHDialog]
+Lprobe=65      -примерная длина щупа (как инструмента)
+X=38           -координаты
 Y=177
 Z=-96.34
-enable=1  -включение (1)или выключение(0) данного диалога (активация)
+enable=1       -включение (1)или выключение(0) данного диалога (активация)
 
 
 
@@ -110,7 +110,6 @@ WLProbeAutoOffsetXYDialog() - Замер смещения шарика щупа в автоматическом режиме
 
 var WLProbeF1Probe  =   250 //скорость первого касания в мм/мин
 var WLProbeF2Probe  =    50 //скорость второго касания в мм/мин
-var WLProbeHsize    =     0 //высота щупа от нижней точки стилуса (низа шарика) до начала отсчёта длины щупа 
 var WLProbeHeadDiam  =    2 //диаметр шарика щупа
 var WLProbeBackDist  =    5 //расстояние отхода для второго касания
 var WLProbeFindDistXY  = 10 //расстояние поиска XY до точки контакта(предполагаемой). или за какое расстояние до предполагаемой точки контакта щуп опустится.
@@ -152,10 +151,12 @@ WLPROBEBUTTON.addButtonMenu("Circ3 XY","WLProbeCirc3XYDialog()")
 WLPROBEBUTTON.addButtonMenu("Circ4 XY","WLProbeCirc4XYDialog()")
 WLPROBEBUTTON.addButtonMenu("Rot   XY","WLProbeRotXYDialog()")
 WLPROBEBUTTON.addButtonMenu("Quad  XY","WLProbeQuadXYDialog()")
-WLPROBEBUTTON.addButtonMenu("Hsize","WLProbeHDialog()")
-WLPROBEBUTTON.addButtonMenu("AutoHsize","WLProbeAutoHDialog()")
+WLPROBEBUTTON.addButtonMenu("probeH","WLProbeHDialog()")
+WLPROBEBUTTON.addButtonMenu("AutoProbeH","WLProbeAutoHDialog()")
 WLPROBEBUTTON.addButtonMenu("OfsetXY","WLProbeOffsetXYDialog()")
 WLPROBEBUTTON.addButtonMenu("AutoOfstXY","WLProbeAutoOffsetXYDialog()")
+WLPROBEBUTTON.addButtonMenu("Replace Probe","WLProbeAutoHandReplaceDialog()")
+
 
 
 WLPROBEBUTTON.setEnabledSub(1,0)
@@ -173,7 +174,6 @@ WLProbeF2Probe =FILE.loadValue(WLProbeFileINI,"F2Probe" ,WLProbeF2Probe);
 WLProbeHeadDiam=FILE.loadValue(WLProbeFileINI,"HeadDiam",WLProbeHeadDiam);
 WLProbeBackDist=FILE.loadValue(WLProbeFileINI,"BackDist",WLProbeBackDist); 
 WLProbeSDStop  =FILE.loadValue(WLProbeFileINI,"SDStop",WLProbeSDStop); 
-WLProbeHsize   =FILE.loadValue(WLProbeFileINI,"Hsize",WLProbeHsize); 
 
   WLProbeFindDistXY=FILE.loadValue(WLProbeFileINI,"FindDistXY",WLProbeFindDistXY);
 WLProbeFindDistXY_A=FILE.loadValue(WLProbeFileINI,"FindDistXY_A",WLProbeFindDistXY_A);
@@ -191,7 +191,6 @@ FILE.saveValue(WLProbeFileINI,"F2Probe" ,WLProbeF2Probe);
 FILE.saveValue(WLProbeFileINI,"HeadDiam",WLProbeHeadDiam);
 FILE.saveValue(WLProbeFileINI,"BackDist",WLProbeBackDist); 
 FILE.saveValue(WLProbeFileINI,"SDStop",WLProbeSDStop); 
-FILE.saveValue(WLProbeFileINI,"Hsize",WLProbeHsize); 
 
 FILE.saveValue(WLProbeFileINI,"FindDistXY",WLProbeFindDistXY);
 FILE.saveValue(WLProbeFileINI,"FindDistXY_A",WLProbeFindDistXY_A);
@@ -219,6 +218,12 @@ if(WLProbeCheckInProbe()==0)
 	return 1	
 
 return 0;	
+}
+
+function WLProbeResetOffsetXY()//Сброс смещения щупа
+{
+WLProbeDX=0
+WLProbeDY=0	
 }
 
 function WLProbeOffsetXY(Diam)//Поиск смещения щупа
@@ -344,7 +349,7 @@ function WLProbeAutoOffsetXYDialog()//Поиск смещения щупа
 return WLProbeAutoOffsetXY()
 }
 
-function WLProbeH(Lmax)//Поиск длины щупа
+function WLProbeH(index,Lprobe)//Поиск длины щупа
 {
 WLProbeInitValue()
 	 
@@ -356,6 +361,8 @@ var Dist=WLProbeFindDistZ
 var DistA=WLProbeFindDistZ_A
 var Z=0
 
+if(WLProbeCheckInProbe()==0) return 0
+
 Dist =FILE.loadValue(WLProbeFileINI,"AutoHDialog/FindDist",Dist);  
 DistA=FILE.loadValue(WLProbeFileINI,"AutoHDialog/FindDist_A",DistA);  
 
@@ -366,24 +373,23 @@ FILE.saveValue(WLProbeFileINI,"AutoHDialog/FindDist_A",DistA);
 
 FILE.saveValue(WLProbeFileINI,"AutoHDialog/Z",Z);  
 
-SCRIPT.console("WLProbeH Hsize= "+Hsize.toFixed(3));
-
-if(WLProbeCheckInProbe()==0) return 0
-
-
 MACHINE.clearGProbe();
 MACHINE.enableDoubleGProbe(1);
 
-MACHINE.addGProbeZ(X,Y,Z+Lmax,Dist,DistA);
+MACHINE.addGProbeZ(X,Y,Z+Lprobe,Dist,DistA);
 
 MACHINE.goGProbe();
 while(MACHINE.isActiv()) SCRIPT.process()
 
 Hsize=MACHINE.getGProbe(0,"Z")-Z 
 
-FILE.saveValue(WLProbeFileINI,"Hsize",Hsize); 
+if(index!=0)
+ {
+ GCODE.setHTool(index,Hsize);
+ MACHINE.runGCode("G43H"+index)
+ }
 
-SCRIPT.console("WLProbeH Hsize= "+Hsize.toFixed(3));
+SCRIPT.console("WLProbeH H"+index+"="+Hsize.toFixed(3));
 
 return 1;
 }
@@ -392,35 +398,90 @@ function WLProbeHDialog()//Поиск длины щупа
 {
 WLProbeInitValue()
 	 
-var Lmax=20
+var Lprobe=20
 var X=MACHINE.getCurPosition("X")
 var Y=MACHINE.getCurPosition("Y")
-var Z=0
 
-Lmax=FILE.loadValue(WLProbeFileINI,"HDialog/Lmax",Lmax);	
-   Z=FILE.saveValue(WLProbeFileINI,"HDialog/Z",Z);   
- 	 
-FILE.saveValue(WLProbeFileINI,"HDialog/Lmax",Lmax);	
-FILE.saveValue(WLProbeFileINI,"HDialog/Z",Z);   
+Lprobe=FILE.loadValue(WLProbeFileINI,"HDialog/Lprobe",Lprobe);	
+	 
+FILE.saveValue(WLProbeFileINI,"HDialog/Lprobe",Lprobe);	
 
 if(WLProbeCheckInProbe()==0) return 0	
 
-Lmax=DIALOG.enterNum("Введите примернуюд лину щупа (от базы инструментов)",Lmax)
+index=GCODE.getValue("T")
+
+if(index==0) index=1
+
+index=DIALOG.enterNum("Введите номер инструмента(щупа):",index)
+if(DIALOG.isCancel()) return 0;  
+
+if(index==0)
+ {
+ DIALOG.message("Номер не может быть 0")
+ return 0;  
+ }
+
+if(GCODE.getHTool(index)!=0) Lprobe=GCODE.getHTool(index)
+	
+Lprobe=DIALOG.enterNum("Введите предпалагаемую длину щупа(инструмента)",Lprobe,2)
 if(DIALOG.isCancel()) return 0
 
-FILE.saveValue(WLProbeFileINI,"HDialog/Lmax",Lmax);	
+FILE.saveValue(WLProbeFileINI,"HDialog/Lprobe",Lprobe);	
 
-WLProbeH(Lmax)
+WLProbeH(index,Lprobe)
 
 return 1;
 }
 
+function WLProbeAutoH(index,Lprobe)//Поиск длины щупа
+{
+var X=0
+var Y=0
+var enable=0
+
+
+enable=FILE.loadValue(WLProbeFileINI,"AutoHDialog/enable",enable);	 	 
+     X=FILE.loadValue(WLProbeFileINI,"AutoHDialog/X",X);
+     Y=FILE.loadValue(WLProbeFileINI,"AutoHDialog/Y",Y);
+     
+
+FILE.saveValue(WLProbeFileINI,"AutoHDialog/enable",enable);
+FILE.saveValue(WLProbeFileINI,"AutoHDialog/X",X);
+FILE.saveValue(WLProbeFileINI,"AutoHDialog/Y",Y);
+
+if(WLProbeCheckInProbe()==0) return 0	
+
+if(Lprobe<=0) 
+    {
+	MACHINE.reset();
+	SCRIPT.console("WLProbeAutoH Lprobe="+Lprobe)
+	return 0
+	}
+	
+if(!enable) {
+return 0
+}
+else
+{
+SCRIPT.console("WLProbeAutoH X="+X+" Y="+Y)
+
+MACHINE.runGCode("G53G90G0 Z0")
+MACHINE.runGCode("G53G90G0 X"+X+"Y"+Y)
+while(MACHINE.isActiv()) SCRIPT.process()
+
+if(WLProbeH(index,Lprobe)==0){
+  return 0
+  }	 
+}
+
+return 1	
+}
 
 function WLProbeAutoHDialog()//Поиск длины щупа, диалог
 {
 WLProbeInitValue()
 	 
-var Lmax=20
+var Lprobe=50
 var enable=0
 var Hsize=0
 var X=0
@@ -432,13 +493,13 @@ enable=FILE.loadValue(WLProbeFileINI,"AutoHDialog/enable",enable);
      X=FILE.loadValue(WLProbeFileINI,"AutoHDialog/X",X);
      Y=FILE.loadValue(WLProbeFileINI,"AutoHDialog/Y",Y);
      Z=FILE.loadValue(WLProbeFileINI,"AutoHDialog/Z",Z);  
-  Lmax=FILE.loadValue(WLProbeFileINI,"AutoHDialog/Lmax",Lmax);	 
+Lprobe=FILE.loadValue(WLProbeFileINI,"AutoHDialog/Lprobe",Lprobe);	 
 
 FILE.saveValue(WLProbeFileINI,"AutoHDialog/enable",enable);
 FILE.saveValue(WLProbeFileINI,"AutoHDialog/X",X);
 FILE.saveValue(WLProbeFileINI,"AutoHDialog/Y",Y);
 FILE.saveValue(WLProbeFileINI,"AutoHDialog/Z",Z); 	 
-FILE.saveValue(WLProbeFileINI,"AutoHDialog/Lmax",Lmax);	
+FILE.saveValue(WLProbeFileINI,"AutoHDialog/Lprobe",Lprobe);	
 
 if(WLProbeCheckInProbe()==0) return 0	
 
@@ -447,30 +508,29 @@ DIALOG.question("Данный режим не активен! Нужно активировать с помощью переменно
 return 0
 }
 else
-{	
-Lmax=DIALOG.enterNum("Введите максимальную длину щупа (от базы инструментов)",Lmax)
-if(DIALOG.isCancel())  return 0
-
-MACHINE.runGCode("G53G90G0 Z0") 
-MACHINE.runGCode("G53G90G0 X"+X+"Y"+Y) 
-while(MACHINE.isActiv()) SCRIPT.process()
-
-FILE.saveValue(WLProbeFileINI,"AutoHDialog/Lmax",Lmax);	
-
-if(WLProbeH(Lmax)==0) 
-	return 0;
-
-MACHINE.runGCode("G53G90G0 Z0")
+ {	
+ index=GCODE.getValue("T")
  
-while(MACHINE.isActiv()) SCRIPT.process()
-
-
- Hsize=FILE.loadValue(WLProbeFileINI,"Hsize",Hsize); 
-
-SCRIPT.console("WLProbeHDialog Hsize= "+Hsize.toFixed(3));
-}
-
-return 1;
+ if(index==0) index=1
+ 
+ index=DIALOG.enterNum("Введите номер инструмента(щупа):",index)
+ if(DIALOG.isCancel()) return 0;  
+ 
+ if(index==0)
+  {
+  DIALOG.message("Номер не может быть 0")
+  return 0;  
+  }
+  
+ if(GCODE.getHTool(index)!=0) Lprobe=GCODE.getHTool(index)
+	 
+ Lprobe=DIALOG.enterNum("Введите предпалагаемую длину щупа(инструмента)",Lprobe,2)
+ if(DIALOG.isCancel())  return 0
+ 
+ FILE.saveValue(WLProbeFileINI,"AutoHDialog/Lprobe",Lprobe);	
+ 
+ return WLProbeAutoH(index,Lprobe);
+ }
 }
 
 function WLProbePointZ(X,Y,Z,Depth)//поиск плоскости
@@ -498,11 +558,9 @@ var X
 var Y
 var Z
 var Dist=20
-var Hzise=0
 
 if(WLProbeCheckInProbe()==0) return 0	
 
-Hsize=FILE.loadValue(WLProbeFileINI,"Hsize",WLProbeHsize); 
 Dist=FILE.loadValue(WLProbeFileINI,"PointZDialog/Dist",Dist);
 
 X=MACHINE.getCurPosition("X")
@@ -520,10 +578,7 @@ DIALOG.question("Принять найденное Z за 0 в текущей СК?")
  
 if(DIALOG.isOk()) 
      {
-	 GCODE.push()	 
-	 MACHINE.runGCode("G49")
-	 MACHINE.setCurPositionSC("Z",(MACHINE.getCurPosition("Z")-Z)+Hsize);
-	 GCODE.pop()	 
+     MACHINE.setCurPositionSC("Z",MACHINE.getCurPosition("Z")-Z);
 	 }
     
 WLProbeXYbaseZ=Z
@@ -575,13 +630,10 @@ Y=MACHINE.getCurPosition("Y")
 A=FILE.loadValue(WLProbeFileINI,"PointXYDialog/A",A);
 Depth=FILE.loadValue(WLProbeFileINI,"LastDialog/Depth",Depth);
 
-DIALOG.enterNum("Введите угол поиска =",A)
+A=DIALOG.enterNum("Введите угол поиска =",A)
 while(DIALOG.isShow());
 
-if(DIALOG.isOk()) 
-  A=DIALOG.getNum();
-else
-  return 0
+if(DIALOG.isCancel()) return 0
 
 Depth=DIALOG.enterNum("Введите смещение плоскости поиска (ProbeZ)",Depth)
 if(DIALOG.isCancel()) return 0
@@ -664,13 +716,8 @@ Depth=FILE.loadValue(WLProbeFileINI,"lastDialog/Depth",Depth);
 R=DIALOG.enterNum("Введите внутренний+ (наружний-)  размер =",R*2)/2
 if(DIALOG.isCancel()||R==0) return 0
 
-DIALOG.enterNum("‚ведите угол поворота (гр) =",A)
-while(DIALOG.isShow());
-
-if(DIALOG.isOk()) 
-  A=DIALOG.getNum();
-else
-  return 0
+A=DIALOG.enterNum("‚ведите угол поворота (гр) =",A)
+if(DIALOG.isCancel()) return 0
 
 Depth=DIALOG.enterNum("Введите смещение плоскости поиска (ProbeZ)",Depth)
 if(DIALOG.isCancel())  return 0
@@ -890,7 +937,7 @@ var A2=120
 var A3=-120
 var Depth=-2
 
-if(WLProbeNReady())	return;
+if(WLProbeNReady())	return 0;
 
 X=MACHINE.getCurPosition("X")
 Y=MACHINE.getCurPosition("Y")
@@ -1094,4 +1141,160 @@ MACHINE.runGCode("G53G0 X"+X.toFixed(3)+" Y"+Y.toFixed(3))
 while(MACHINE.isActiv()) SCRIPT.process()
 
 return 1
+}
+
+function WLProbeAutoHandReplace(autoH) 
+{
+var index=1
+var enable=0
+var X=0;
+var Y=0;
+var Z=0;
+var Lprobe=100;	 
+
+enable=FILE.loadValue(WLProbeFileINI,"AutoHandReplaceDialog/enable",enable);
+     X=FILE.loadValue(WLProbeFileINI,"AutoHandReplaceDialog/X",X);	
+     Y=FILE.loadValue(WLProbeFileINI,"AutoHandReplaceDialog/Y",Y);	
+     Z=FILE.loadValue(WLProbeFileINI,"AutoHandReplaceDialog/Z",Z);	 
+
+ Lprobe=FILE.loadValue(WLProbeFileINI,"AutoHDialog/Lprobe",Lprobe);		 
+
+FILE.saveValue(WLProbeFileINI,"AutoHandReplaceDialog/enable",enable);
+FILE.saveValue(WLProbeFileINI,"AutoHandReplaceDialog/X",X);	
+FILE.saveValue(WLProbeFileINI,"AutoHandReplaceDialog/Y",Y);	
+FILE.saveValue(WLProbeFileINI,"AutoHandReplaceDialog/Z",Z);
+
+FILE.saveValue(WLProbeFileINI,"AutoHDialog/Lprobe",Lprobe);	
+
+index=GCODE.getValue("T")
+
+if(WLToolLastIndexT==index)  {
+    SCRIPT.console("WLProbeManualReplace toolprobe set later");
+	if(DIALOG.isCancel()) 
+	             return 1
+	}
+	
+if(!enable) {
+DIALOG.question("Данный режим не активен! Нужно активировать с помощью переменной enable в файле WLProbe.ini [AutoHandReplaceDialog]")  
+return 0
+}
+else
+{
+WLToolLastIndexT=0
+	
+var Xback=MACHINE.getCurPosition("X"); 
+var Yback=MACHINE.getCurPosition("Y"); 	
+var Zback=MACHINE.getCurPosition("Z"); 
+  
+SCRIPT.console("ManualReplaceDialog Zback"+Zback.toFixed(2));
+
+MACHINE.runGCode("G53G90G0 Z0") 
+MACHINE.runGCode("G53G90G0 X"+X+"Y"+Y)
+MACHINE.runGCode("G53G90G0 Z"+Z) 
+ 
+while(MACHINE.isActiv()) SCRIPT.process()
+
+DIALOG.question("Замените инструмент на №"+index)  
+if(DIALOG.isCancel()) return 0;  
+
+ if(autoH==1){
+  MACHINE.runGCode("G53G90G0 Z0") 
+  
+  if(GCODE.getHTool(index)!=0) Lprobe=GCODE.getHTool(index)
+    
+  Lprobe=DIALOG.enterNum("Введите предпалагаемую длину щупа(инструмента)",Lprobe,2)
+  if(DIALOG.isCancel()) return 0;  
+   
+  if(WLProbeAutoH(index,Lprobe)!=1)
+                                     return 0
+   
+  MACHINE.runGCode("G53G90G0 Z0") 
+  MACHINE.runGCode("G53G90G0 X"+Xback+"Y"+Yback)
+  MACHINE.runGCode("G53G90G0 Z"+Zback)  
+  
+  SCRIPT.console("AutoHandReplaceDialog Zback"+Zback.toFixed(2));
+  } 
+ 
+WLToolLastIndexT=index
+}
+
+return 1	
+}
+
+
+function WLProbeAutoHandReplaceDialog() 
+{
+var index=1
+var enable=0
+var X=0;
+var Y=0;
+var Z=0;
+var Lprobe=100;	 
+
+enable=FILE.loadValue(WLProbeFileINI,"AutoHandReplaceDialog/enable",enable);
+     X=FILE.loadValue(WLProbeFileINI,"AutoHandReplaceDialog/X",X);	
+     Y=FILE.loadValue(WLProbeFileINI,"AutoHandReplaceDialog/Y",Y);	
+     Z=FILE.loadValue(WLProbeFileINI,"AutoHandReplaceDialog/Z",Z);	 
+
+Lprobe=FILE.loadValue(WLProbeFileINI,"AutoHDialog/Lprobe",Lprobe);		 
+
+FILE.saveValue(WLProbeFileINI,"AutoHandReplaceDialog/enable",enable);
+FILE.saveValue(WLProbeFileINI,"AutoHandReplaceDialog/X",X);	
+FILE.saveValue(WLProbeFileINI,"AutoHandReplaceDialog/Y",Y);	
+FILE.saveValue(WLProbeFileINI,"AutoHandReplaceDialog/Z",Z);
+
+FILE.saveValue(WLProbeFileINI,"AutoHDialog/Lprobe",Lprobe);	
+
+index=GCODE.getValue("T")
+	
+if(!enable) {
+DIALOG.question("Данный режим не активен! Нужно активировать с помощью переменной enable в файле WLProbe.ini [AutoHandReplaceDialog]")  
+return 0
+}
+else
+{
+WLToolLastIndexT=0
+	
+var Xback=MACHINE.getCurPosition("X"); 
+var Yback=MACHINE.getCurPosition("Y"); 	
+var Zback=MACHINE.getCurPosition("Z"); 
+  
+SCRIPT.console("ManualReplaceDialog Zback"+Zback.toFixed(2));
+
+MACHINE.runGCode("G53G90G0 Z0") 
+MACHINE.runGCode("G53G90G0 X"+X+"Y"+Y)
+MACHINE.runGCode("G53G90G0 Z"+Z) 
+ 
+while(MACHINE.isActiv()) SCRIPT.process()
+
+if(index==0) index=1  
+
+index=DIALOG.enterNum("Введите номер щупа(инструмента) №",index)  
+if(DIALOG.isCancel()) return 0
+
+if(DIALOG.getNum()>0)  {
+  MACHINE.runGCode("T"+DIALOG.getNum())
+  }
+  
+DIALOG.question("Произвести замер длины щупа(инструмента)? №"+index)  
+while(DIALOG.isShow());
+
+if(DIALOG.isOk())  {
+  MACHINE.runGCode("G53G90G0 Z0") 
+ 
+  if(GCODE.getHTool(index)!=0) Lprobe=GCODE.getHTool(index)
+	 
+  Lprobe=DIALOG.enterNum("Введите предпалагаемую длину щупа(инструмента)",Lprobe,2)
+  if(DIALOG.isCancel()) return 0;  
+
+  if(WLProbeAutoH(index,Lprobe)!=1)
+                                  return 0
+  
+  SCRIPT.console("AutoHandReplaceDialog Zback"+Zback.toFixed(2));
+  }      	  
+ 
+WLToolLastIndexT=index
+}
+
+return 1	
 }

@@ -16,15 +16,16 @@ WLTool - базовый скрипт работы с инструментом
     function M6()
 	{
 	...	
-	if(WLToolAutoHandReplaceDialog(1)==0)
-                         MACHINE.reset()	
+	if(WLToolAutoHandReplace(1)==0)
+                   MACHINE.reset()	
 	}
 	
 
 25/11/2021 - первый релиз
 
-WLToolH(index,Dist)               - Поиск высоты инструмента либо базового смещения (index=0,Dist - дистанция поиска) 
-WLToolHDialog()                   - Поиск высоты инструмента либо базового смещения
+WLToolH(index,Dist)               - Измерение длины инструмента либо базового смещения (index=0,Dist - дистанция поиска) 
+WLToolHDialog()                   - Измерение длины инструмента либо базового смещения
+WLToolAutoHDialog(autoH)          - Измерение длины нструмента с перемещением в точку измерения. Перемещение в G53 Z0, перемещение по XY. 
 WLToolManualReplaceDialog(autoH)  - Замена нструмента с перемещением в точку замены. Перемещение в G53 Z0, перемещение по XY.
                                     Если autoH = 1 то будет произведен замер длины после смены инструмента. Возвращает 1 в случае успеха.
 
@@ -57,9 +58,9 @@ BAR.addButton("WLTOOLBUTTON")
 WLTOOLBUTTON.setText("TOOL")
 
 WLTOOLBUTTON.clearMenu() 
-WLTOOLBUTTON.addButtonMenu("H","WLToolHDialog()")
-WLTOOLBUTTON.addButtonMenu("Auto H","WLToolAutoHDialog()")
-WLTOOLBUTTON.addButtonMenu("Replace Tool","WLToolAutoHandReplaceDialog(0)")
+WLTOOLBUTTON.addButtonMenu("toolH","WLToolHDialog()")
+WLTOOLBUTTON.addButtonMenu("AutoToolH","WLToolAutoHDialog()")
+WLTOOLBUTTON.addButtonMenu("Replace Tool","WLToolAutoHandReplaceDialog()")
 }
 
 
@@ -88,12 +89,21 @@ FILE.saveValue(WLToolFileINI,"FindDist_A"  ,WLToolFindDist_A); ;
 
 }
 
+function WLToolCheckInProbe()
+{
+while(MACHINE.getInProbe()){	
+	if(!DIALOG.question("Датчик inProbe не включен. Включите.")) return 0;
+    }	
+
+return 1	
+}
+
 
 function WLToolH(index,Ltool) //поиск высоты инструмента либо базового смещения (index=0) Ltool предпалагаема длина
 {
 WLToolInitValue()
 
-if(WLProbeCheckInProbe()==0) return 0	
+if(WLToolCheckInProbe()==0) return 0	
 	
 var X=MACHINE.getCurPosition("X")
 var Y=MACHINE.getCurPosition("Y")
@@ -129,24 +139,28 @@ SCRIPT.console("WLProbeToolH Z="+Z.toFixed(3))
 if(index==0)
 	FILE.saveValue(WLToolFileINI,"AutoHDialog/Z",Z);	 
 else
+    {
 	GCODE.setHTool(index,Z-MACHINE.getOffsetHTool());
+    MACHINE.runGCode("G43H"+index)
+	}
 
 return 1;
 }
 
 function WLToolHDialog() //поиск высоты инструмента либо базового смещения, диалог
 {
-var index
-var Ltool=20
-var Z
+var index=0
+var Ltool=50
+var Z=0
 
-if(WLProbeCheckInProbe()==0) return 0	
+if(WLToolCheckInProbe()==0) return 0	
 
 Z=MACHINE.getCurPosition("Z")
 
 Ltool=FILE.loadValue(WLToolFileINI,"HDialog/Ltool",Ltool);
+FILE.saveValue(WLToolFileINI,"HDialog/Ltool",Ltool);
 
-index=GCODE.getValue("H")
+index=GCODE.getValue("T")
 
 if(index==0) index=1
 
@@ -170,7 +184,9 @@ if(index==0)
  }
  else
  {
- Ltool=DIALOG.enterNum("Введите предпалагаемую длину инструмента",Ltool)
+ if(GCODE.getHTool(index)!=0) Ltool=GCODE.getHTool(index)
+		 
+ Ltool=DIALOG.enterNum("Введите предпалагаемую длину инструмента",Ltool,2)
  if(DIALOG.isCancel()) return 0;  
  }
 
@@ -194,7 +210,7 @@ FILE.saveValue(WLToolFileINI,"AutoHDialog/enable",enable);
 FILE.saveValue(WLToolFileINI,"AutoHDialog/X",X);	
 FILE.saveValue(WLToolFileINI,"AutoHDialog/Y",Y);	 
 
-if(WLProbeCheckInProbe()==0) return 0	
+if(WLToolCheckInProbe()==0) return 0	
 	
 if(Ltool<=0) 
     {
@@ -204,26 +220,20 @@ if(Ltool<=0)
 	}
 	
 if(!enable) {
-DIALOG.question("Данный режим не активен! Нужно активировать с помощью переменной enable в файле WLTool.ini"+enable)  
 return 0
 }
 else
 {
 SCRIPT.console("WLToolAutoH X="+X+" Y="+Y)
 
-GCODE.push();
 MACHINE.runGCode("G53G90G0 Z0")
 MACHINE.runGCode("G53G90G0 X"+X+"Y"+Y)
 while(MACHINE.isActiv()) SCRIPT.process()
 
 if(WLToolH(index,Ltool)==0){
-  GCODE.pop();	
   return 0
   }	 
-GCODE.pop();
 }
-
-MACHINE.runGCode("G43H"+index)
 
 return 1	
 }
@@ -249,7 +259,7 @@ FILE.saveValue(WLToolFileINI,"AutoHDialog/Y",Y);
 FILE.saveValue(WLToolFileINI,"AutoHDialog/Ltool",Ltool);
 
 if(!enable) {
-DIALOG.question("Данный режим не активен! Нужно активировать с помощью переменной enable в файле WLTool.ini")  
+DIALOG.question("Данный режим не активен! Нужно активировать с помощью переменной enable в файле WLTool.ini [AutoHandReplaceDialog]")  
 return 0
 }
 else
@@ -271,8 +281,10 @@ if(index==0)
  if(DIALOG.isCancel()) return 0;  
  }
  else
- {
- Ltool=DIALOG.enterNum("Введите предпалагаемую длину инструмента",Ltool)
+ {	 
+ if(GCODE.getHTool(index)!=0) Ltool=GCODE.getHTool(index)
+	 
+ Ltool=DIALOG.enterNum("Введите предпалагаемую длину инструмента",Ltool,2)
  if(DIALOG.isCancel()) return 0;  
  
  FILE.saveValue(WLToolFileINI,"AutoHDialog/Ltool",Ltool);
@@ -280,13 +292,12 @@ if(index==0)
  
 return WLToolAutoH(index,Ltool) 
 }
-
 	
 }
 
-function WLToolAutoHandReplaceDialog(autoH) 
+function WLToolAutoHandReplace(autoH) 
 {
-var index=1
+var index
 var enable=0
 var X=0;
 var Y=0;
@@ -307,18 +318,15 @@ FILE.saveValue(WLToolFileINI,"AutoHandReplaceDialog/Z",Z);
 
 FILE.saveValue(WLToolFileINI,"AutoHDialog/Ltool",Ltool);	
 
-if(WLToolLastIndexT==GCODE.getValue("T"))  {
-    SCRIPT.console("WLToolManualReplaceDialog tool set later");
-	
-	DIALOG.question("Инструмент уже установлен. Продолжить?")  
-	while(DIALOG.isShow());
-    
-	if(DIALOG.isCancel()) 
-	             return 1
+index=GCODE.getValue("T")
+
+if(WLToolLastIndexT==index)  {
+    SCRIPT.console("WLToolManualReplace tool set later");
+	return 1
 	}
 	
 if(!enable) {
-DIALOG.question("Данный режим не активен! Нужно активировать с помощью переменной enable в файле WLTool.ini")  
+DIALOG.question("Данный режим не активен! Нужно активировать с помощью переменной enable в файле WLTool.ini [AutoHandReplaceDialog]")  
 return 0
 }
 else
@@ -337,61 +345,105 @@ MACHINE.runGCode("G53G90G0 Z"+Z)
  
 while(MACHINE.isActiv()) SCRIPT.process()
 
- if(autoH==0)
-  {
-  index=GCODE.getValue("T")
-
-  if(index==0) index=1  
-  
-  index=DIALOG.enterNum("Введите номер инструмента №",index)  
-  if(DIALOG.isCancel()) return 0
-  
-  if(DIALOG.getNum()>0)  
-      {
-      MACHINE.runGCode("T"+DIALOG.getNum())
-	  }
-	  
-  DIALOG.question("Произвести замер длины инструмента? №"+GCODE.getValue("T"))  
-  while(DIALOG.isShow());
- 
-  if(DIALOG.isOk()) 
-    {
-    MACHINE.runGCode("G53G90G0 Z0") 
-   
-    Ltool=DIALOG.enterNum("Введите предпалагаемую длину инструмента",Ltool)
-    if(DIALOG.isCancel()) return 0;  
-
-   if(WLToolAutoH(GCODE.getValue("T"),Ltool)!=1)
-                                    return 0
-    
-    SCRIPT.console("AutoHandReplaceDialog Zback"+Zback.toFixed(2));
-	}      	  
-  }
-  else
-  {
-  DIALOG.question("Замените инструмент на №"+GCODE.getValue("T"))  
-  if(DIALOG.isCancel()) return 0;  
-  }
+ DIALOG.question("Замените инструмент на №"+index);  
+ if(DIALOG.isCancel()) return 0;   
 
  if(autoH==1){
 	 
  MACHINE.runGCode("G53G90G0 Z0") 
    
- Ltool=DIALOG.enterNum("Введите предпалагаемую длину инструмента",Ltool)
+ if(GCODE.getHTool(index)!=0) Ltool=GCODE.getHTool(index)
+	   
+ Ltool=DIALOG.enterNum("Введите предпалагаемую длину инструмента",Ltool,2)
  if(DIALOG.isCancel()) return 0;  
   
- if(WLToolAutoH(GCODE.getValue("T"),Ltool)!=1)
-                                    return 0
+ if(WLToolAutoH(index,Ltool)!=1) return 0
   
  MACHINE.runGCode("G53G90G0 Z0") 
  MACHINE.runGCode("G53G90G0 X"+Xback+"Y"+Yback)
  MACHINE.runGCode("G53G90G0 Z"+Zback)  
  
  SCRIPT.console("AutoHandReplaceDialog Zback"+Zback.toFixed(2));
- }
+ } 
  
+ WLToolLastIndexT=index
+}
+
+return 1	
+}
+
+
+function WLToolAutoHandReplaceDialog() 
+{
+var index=0
+var enable=0
+var X=0;
+var Y=0;
+var Z=0;
+var Ltool=100.0;	 
+
+enable=FILE.loadValue(WLToolFileINI,"AutoHandReplaceDialog/enable",enable);
+     X=FILE.loadValue(WLToolFileINI,"AutoHandReplaceDialog/X",X);	
+     Y=FILE.loadValue(WLToolFileINI,"AutoHandReplaceDialog/Y",Y);	
+     Z=FILE.loadValue(WLToolFileINI,"AutoHandReplaceDialog/Z",Z);	 
+
+ Ltool=FILE.loadValue(WLToolFileINI,"AutoHDialog/Ltool",Ltool);		 
+
+FILE.saveValue(WLToolFileINI,"AutoHandReplaceDialog/enable",enable);
+FILE.saveValue(WLToolFileINI,"AutoHandReplaceDialog/X",X);	
+FILE.saveValue(WLToolFileINI,"AutoHandReplaceDialog/Y",Y);	
+FILE.saveValue(WLToolFileINI,"AutoHandReplaceDialog/Z",Z);
+
+FILE.saveValue(WLToolFileINI,"AutoHDialog/Ltool",Ltool);	
+	
+index=GCODE.getValue("T")
+	
+if(!enable) {
+DIALOG.question("Данный режим не активен! Нужно активировать с помощью переменной enable в файле WLTool.ini [AutoHandReplaceDialog]")  
+return 0
+}
+else
+{
+WLToolLastIndexT=0
+	
+var Xback=MACHINE.getCurPosition("X"); 
+var Yback=MACHINE.getCurPosition("Y"); 	
+var Zback=MACHINE.getCurPosition("Z"); 
+  
+SCRIPT.console("ManualReplaceDialog Zback"+Zback.toFixed(2));
+
+MACHINE.runGCode("G53G90G0 Z0") 
+MACHINE.runGCode("G53G90G0 X"+X+"Y"+Y)
+MACHINE.runGCode("G53G90G0 Z"+Z) 
  
- WLToolLastIndexT=GCODE.getValue("T") 
+while(MACHINE.isActiv()) SCRIPT.process()
+
+ if(index==0) index=1  
+ 
+ index=DIALOG.enterNum("Введите номер инструмента №",index)  
+ if(DIALOG.isCancel()) return 0
+ 
+ if(DIALOG.getNum()>0) {
+     MACHINE.runGCode("T"+DIALOG.getNum())
+     }
+  
+ DIALOG.question("Произвести замер длины инструмента? №"+index)  
+ while(DIALOG.isShow());
+
+ if(DIALOG.isOk()){
+   MACHINE.runGCode("G53G90G0 Z0") 
+  
+   if(GCODE.getHTool(index)!=0) Ltool=GCODE.getHTool(index)
+	   
+   Ltool=DIALOG.enterNum("Введите предпалагаемую длину инструмента",Ltool,2)
+   if(DIALOG.isCancel()) return 0;  
+
+   if(WLToolAutoH(GCODE.getValue("T"),Ltool)!=1)  return 0
+   
+   SCRIPT.console("AutoHandReplaceDialog Zback"+Zback.toFixed(2));  
+   }      	  
+ 
+ WLToolLastIndexT=index
 }
 
 return 1	
