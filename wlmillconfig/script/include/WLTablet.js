@@ -15,6 +15,7 @@ WLTablet - базовый скрипт работы с "таблеткой"
  4. Все настройки хранятся в файле WLTablet.ini. Если его нет, то он будет создан при инициализации скрипта. 
 
 25/11/2021 - первый релиз
+14/01/2022 - добавлено подтверждение отключения крокодила
 
 WLTabletZ0Dialog() - Поиск высоты изделия. 
 
@@ -99,17 +100,18 @@ MACHINE.addGProbeZ(X,Y,Z,Dist);
 MACHINE.goGProbe();
 while(MACHINE.isActiv()) SCRIPT.process()
 
+DIALOG.question("Отсоедините датчик-таблетку.");
+
 Z=MACHINE.getGProbe(0,"Z")
 
 var Z0=MACHINE.getGProbeSC(0,"Z")-WLTabletHeight;
 
 SCRIPT.console("WLTabletZ0 Z(G53)="+Z.toFixed(3))
 
-DIALOG.question("Z0="+Z0.toFixed(3)+" Принять найденное Z за 0 в текущей СК?");
-while(DIALOG.isShow());
+Z0=DIALOG.enterNum("Z0= "+Z0.toFixed(3)+" Принять найденное Z(текущей СК)= ",0);
   
 if(DIALOG.isOk())
-	   MACHINE.setCurPositionSC("Z",MACHINE.getCurPosition("Z")-Z+WLTabletHeight);
+	   MACHINE.setCurPositionSC("Z",MACHINE.getCurPosition("Z")-Z+WLTabletHeight+Z0);
 
 return Z;
 }
