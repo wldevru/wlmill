@@ -5,3 +5,4 @@ sudo apt install libqt5script5
 sudo apt install libqt5qml5
 sudo apt install libqt5quickwidgets5
 sudo apt install qml-module-qtquick-controls
+sudo apt install libsdl2
