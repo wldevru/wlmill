@@ -1,36 +1,8 @@
-loadTool
-loadTool
-loadGCode
-"function M9()\n"
-"function M5()\n"
-"function M3()\n"
-"function M300()\n"
-"function M9()\n"
-"function init()\n"
-"function loopPLC()\n"
-WLMill::readyMachine() <<<
-load ConfigXML
-open ConfigXML
-read ConfigXML
-findElement  "Colors"   "StartElement"
-findElement  "Colors"   "EndElement"
-findElement  "Operating"   "StartElement"
-findElement  "Operating"   "EndElement"
-findElement  "author"   "StartElement"
-findElement  "author"   "EndElement"
-findElement  "WhiteLineMillConfig"   "EndElement"
-start read File
-loadTextProgram 6140
-updateShowTraj()
-createDockIOPut
-QMetaObject::connectSlotsByName: No matching signal for on_pbFast_pressed()
-QMetaObject::connectSlotsByName: No matching signal for on_pbFast_released()
-QMetaObject::connectSlotsByName: No matching signal for on_pbPlusSper_pressed()
-QMetaObject::connectSlotsByName: No matching signal for on_pbMinusSper_pressed()
-QMetaObject::connectSlotsByName: No matching signal for on_pbPlusFper_pressed()
-QMetaObject::connectSlotsByName: No matching signal for on_pbMinusFper_pressed()
-QMetaObject::connectSlotsByName: No matching signal for on_pbPlusFman_pressed()
-QMetaObject::connectSlotsByName: No matching signal for on_pbMinusFman_pressed()
-QMetaObject::connectSlotsByName: No matching signal for on_pbPlus_pressed()
-QMetaObject::connectSlotsByName: No matching signal for on_pbMinus_pressed()
-QLayout: Attempting to add QLayout "" to WLPositionWidget "WLPositionWidget", which already has a layout
+#!/bin/bash
+sudo apt install qt5-default
+sudo apt install qtcreator
+sudo apt install qtdeclarative5-dev 
+sudo apt install libqt5serialport5-dev
+sudo apt install qtscript5-dev
+sudo apt install qtmultimedia5-dev
+sudo apt install libsdl2-dev
