@@ -1,5 +1,5 @@
 #!/bin/bash
-sudo apt install qtbase5-dev
+sudo apt install qtbase5-dev qtchooser qt5-qmake qtbase5-dev-tools
 sudo apt install qtcreator
 sudo apt install qtdeclarative5-dev 
 sudo apt install libqt5serialport5-dev
