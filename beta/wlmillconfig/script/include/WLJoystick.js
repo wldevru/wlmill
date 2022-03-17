@@ -1,67 +1,45 @@
 /*
-WLJoystick - базовый скрипт работы с джостиком / геймпадом
+WLJoystick - пример работы с джостиком / геймпадом
 
 Установка:
- 1.Копируем этот файл (WLJoystick.js) в папку /wlmillconfig/script/include
- 2.Подключаем,  добавляя в LScript.
-   function init()
-   {
-   SCRIPT.includeFile("/include/WLJoystick.js")
-   ....	   
-   }
- 3. Добавляем функции обработки.
+ 1.Для работы с джостиком нужно определить функции которые вызываются при изменение данных от джостика.
  
-    function changedButtonJoystick(id,button,press)
-	{
-	WLJoystickChangedButton1(id,button,press)	
-	}
-	
-	function changedPOVJoystick(id,number,angle)
-	{
-	WLJoystickChangedPOV1(id,number,angle)	
-	}
-	
-	function changedAxisJoystick(id,axis,value)
-	{
-	WLJoystickChangedAxis(id,axis,value)			
-	}
-	
- 4. Все настройки хранятся в файле WLJoystick.ini. Если его нет, то он будет создан при инициализации скрипта. 
-
-02/03/2021 - первый релиз (бета)
-
-WLJoystickChangedButton(id,button,press) - Обработчик изменения состояния кнопки
-WLJoystickChangedPOV(id,number,angle)    - Обработчик изменения направления
-WLJoystickCchangedAxis(id,axis,value)    - Обработчик перемещения осей
+ 2.Ниже будут примеры функций. Которые могут быть вами использованы.
+ 
+ 3.Добавляем функции обработки.
+ 
+ function changedButtonJoystick(id,button,press) //нажатие на кнопку джостика
+ {
+ if(press)
+  SCRIPT.console("Joystick "+id+" button "+button+" pressed")
+ else                 
+  SCRIPT.console("Joystick "+id+" button "+button+" released")
+ }
+ 	
+ function changedPOVJoystick(id,number,angle)  //нажатие на курсор крест (джостика)
+ {	
+ SCRIPT.console("Joystick "+id+" POV "+number+" angle "+angle)
+ }
+ 	
+ function changedAxisJoystick(id,axis,value) //пропорциональные оси
+ {
+ SCRIPT.console("Jostick"+id+" axis "+axis+" value "+value)	
+ }
+ 
+ 4. Также можем добавить и этот файл. Копируем этот файл (WLJoystick.js) в папку /wlmillconfig/script/include
+    Подключаем,  добавляя в LScript.
+      function init()
+      {
+      SCRIPT.includeFile("/include/WLJoystick.js")
+      ....	   
+      }
+ 
+ 
 */
 
-var WLJoystickId = 0                      //номер джостика для управления
-var WLJoystickStepPercentCorFplus  =  2.5 //шаг увеличения корректора F в процентах
-var WLJoystickStepPercentCorFminus = -2.5 //шаг уменьшения корректора F в процентах
-var WLJoystickStepPercentCorSplus  =  2.5 //шаг увеличения корректора S в процентах
-var WLJoystickStepPercentCorSminus = -2.5 //шаг уменьшения корректора S в процентах
-
-
-function WLJoystickInit()
+function changedButtonJoystick(id,button,press)
 {
-WLJoystickId = FILE.loadValue(WLJoystickFileINI,"Id" ,WLJoystickId);	
-
-WLJoystickStepPercentCorFplus  = FILE.loadValue(WLJoystickFileINI,"StepPercentCorFplus"  ,WLJoystickStepPercentCorFplus );	
-WLJoystickStepPercentCorFminus = FILE.loadValue(WLJoystickFileINI,"StepPercentCorFminus" ,WLJoystickStepPercentCorFminus);	
-WLJoystickStepPercentCorSplus  = FILE.loadValue(WLJoystickFileINI,"StepPercentCorSplus"  ,WLJoystickStepPercentCorSplus );	
-WLJoystickStepPercentCorSminus = FILE.loadValue(WLJoystickFileINI,"StepPercentCorSminus" ,WLJoystickStepPercentCorSminus);	
-
-FILE.saveValue(WLJoystickFileINI,"Id"  ,WLJoystickId); 	
-
-FILE.saveValue(WLJoystickFileINI,"StepPercentCorFplus"  ,WLJoystickStepPercentCorFplus );	
-FILE.saveValue(WLJoystickFileINI,"StepPercentCorFminus" ,WLJoystickStepPercentCorFminus);	
-FILE.saveValue(WLJoystickFileINI,"StepPercentCorSplus"  ,WLJoystickStepPercentCorSplus );	
-FILE.saveValue(WLJoystickFileINI,"StepPercentCorSminus" ,WLJoystickStepPercentCorSminus);	
-}
-
-function WLJoystickChangedButton(id,button,press)
-{
-if(WLJoystickId==id)
+if(id==0)
 {	
 if(press)
 switch(button)
@@ -73,11 +51,11 @@ case 6:   SCRIPT.console("press 6")
                if(GCODE.isMCode(3))
                  MACHINE.runMCode(5);
                 else
-                  MACHINE.runMCode(3);               
+                 MACHINE.runMCode(3);               
 
                break;
 
-case 14:   MACHINE.plusPercentManual()
+case 14:   MACHINE.plusPercentManual()  
            break;
 
 case 13:   MACHINE.minusPercentManual()
@@ -87,33 +65,32 @@ case 13:   MACHINE.minusPercentManual()
 }
 }
 
-function WLJoystickChangedPOV(id,number,angle)
+function changedPOVJoystick(id,number,angle)
 {
-if(WLJoystickId==id)
+if(id==0)
 {	
 switch(angle)
 {
-case 0:   MACHINE.setPercentS(MACHINE.getPercentS()+WLJoystickStepPercentCorSplus)
-                break;
+case 0:   MACHINE.setPercentS(MACHINE.getPercentS()+2.5)
+                  break;
 
-case 180: MACHINE.setPercentS(MACHINE.getPercentS()+WLJoystickStepPercentCorSminus)
-                 break;
+case 180: MACHINE.setPercentS(MACHINE.getPercentS()-2.5)
+                  break;
 
-case 90:  MACHINE.setPercentF(MACHINE.getPercentF()+WLJoystickStepPercentCorFplus)
-                 break;
+case 90:  MACHINE.setPercentF(MACHINE.getPercentF()+2.5)
+                  break;
 
-case 270: MACHINE.setPercentF(MACHINE.getPercentF()+WLJoystickStepPercentCorFminus) 
-                 break;
-
-}
+case 270: MACHINE.setPercentF(MACHINE.getPercentF()-2.5) 
+                  break;
 
 }
+
+}
 }
 
-
-function WLJoystickChangedAxis(id,axis,value)
+function changedAxisJoystick(id,axis,value)
 {
-if(WLJoystickId==id)
+if(id==0)
 {	
 value=value * MACHINE.getPercentManual()/100
 
