@@ -20,9 +20,15 @@ WLTool - базовый скрипт работы с инструментом
                    MACHINE.reset()	
 	}
 	
-
 25/11/2021 - первый релиз
 13/01/2022 - исправлены ошибки
+14/04/2022 - при автозамене инструмента изменено. 1 ≈сли инстр. тот же то игнорируем замену.  2 один диалог вместо двух (установите инст.+ введите длину).
+23/05/2022 - добавлен параметр    AutoSetG43H - автоустановка G43 после измерени€ длины инструмента
+             добавлено сохранение последненго инструмента LastIndexT в файл WLTool.ini
+20/06/2022 - исправлена ошибка. не учитывалась введЄна€ длина при автозамере длины инструмента
+             добавлено восстановление номера инструмента из скрипта 	
+             добавлен флаг WLToolAlwaysHReplace - всегда переустанавливать инструмент (исполнение M6)			 
+
 
 WLToolH(index,Dist)               - »змерение длины инструмента либо базового смещени€ (index=0,Dist - дистанци€ поиска) 
 WLToolHDialog()                   - »змерение длины инструмента либо базового смещени€
@@ -45,6 +51,9 @@ var WLToolUseTabletH=   1  //используетс€ (1) или нет (0) датчик-таблетка. Ќужно
 var WLToolFindDist  = 10  //рассто€ние поиска до предполаемой точки
 var WLToolFindDist_A= -5   //рассто€ние поиска после
 
+var WLToolAutoSetG43H = 1    //устанавливать G43H после измерений
+var WLToolAlwaysHReplace= 1  //всегда переустанавливать инструмент
+
 var WLToolLmin = 5     //минимальна€ длина инструмента
 var WLToolLmax = 80    //максимальна длина инструмента 
                        //≈сли  WLToolLmin==0 и WLToolLmax==0 то перед измерением будет каждый раз запрашиватьс€ примерна€ длинна инструмента. ј значение по умолчанию будет братьс€ из таблицы инструментов.
@@ -53,6 +62,8 @@ function WLToolInit()
 {
 WLToolInitButton(TOOLBAR1)
 WLToolInitValue();
+
+GCODE.setT(WLToolLastIndexT)
 }
 
 function WLToolInitButton(BAR)
@@ -62,9 +73,9 @@ BAR.addButton("WLTOOLBUTTON")
 WLTOOLBUTTON.setText("TOOL")
 
 WLTOOLBUTTON.clearMenu() 
-WLTOOLBUTTON.addButtonMenu("toolH","WLToolHDialog()")
-WLTOOLBUTTON.addButtonMenu("AutoToolH","WLToolAutoHDialog()")
-WLTOOLBUTTON.addButtonMenu("Replace Tool","WLToolAutoHandReplaceDialog()")
+WLTOOLBUTTON.addButtonMenu("toolH","WLToolHDialog()","«амер длины инструмента")
+WLTOOLBUTTON.addButtonMenu("AutoToolH","WLToolAutoHDialog()","јвтоматический замер длины инструмента")
+WLTOOLBUTTON.addButtonMenu("Replace Tool","WLToolAutoHandReplaceDialog()","–учна€ замена инструмента")
 }
 
 
@@ -77,6 +88,10 @@ WLToolSDStop  =FILE.loadValue(WLToolFileINI,"SDStop"  ,WLToolSDStop);
 WLToolUseTabletH=FILE.loadValue(WLToolFileINI,"UseTabletH"  ,WLToolUseTabletH); 
 WLToolFindDist=FILE.loadValue(WLToolFileINI,"FindDist"  ,WLToolFindDist); 
 WLToolFindDist_A=FILE.loadValue(WLToolFileINI,"FindDist_A"  ,WLToolFindDist_A); 
+WLToolAutoSetG43H=FILE.loadValue(WLToolFileINI,"AutoSetG43H"  ,WLToolAutoSetG43H); 
+WLToolLastIndexT=FILE.loadValue(WLToolFileINI,"LastIndexT"  ,WLToolLastIndexT); 
+WLToolAlwaysHReplace=FILE.loadValue(WLToolFileINI,"AlwaysHReplace"  ,WLToolAlwaysHReplace); 
+
 
 WLToolLmin=FILE.loadValue(WLToolFileINI,"Lmin",WLToolLmin); 
 WLToolLmax=FILE.loadValue(WLToolFileINI,"Lmax",WLToolLmax); 
@@ -93,6 +108,9 @@ FILE.saveValue(WLToolFileINI,"SDStop",WLToolSDStop);
 FILE.saveValue(WLToolFileINI,"UseTabletH"  ,WLToolUseTabletH); 
 FILE.saveValue(WLToolFileINI,"FindDist"  ,WLToolFindDist); 
 FILE.saveValue(WLToolFileINI,"FindDist_A"  ,WLToolFindDist_A); 
+FILE.saveValue(WLToolFileINI,"AutoSetG43H"  ,WLToolAutoSetG43H); 
+FILE.saveValue(WLToolFileINI,"LastIndexT"  ,WLToolLastIndexT); 
+FILE.saveValue(WLToolFileINI,"AlwaysHReplace"  ,WLToolAlwaysHReplace); 
 
 FILE.saveValue(WLToolFileINI,"Lmin",WLToolLmin); 
 FILE.saveValue(WLToolFileINI,"Lmax",WLToolLmax); 
@@ -177,7 +195,9 @@ if(index==0)
 else
     {
 	GCODE.setHTool(index,Z-FILE.loadValue(WLToolFileINI,"AutoHDialog/Z",Z));
-    MACHINE.runGCode("G43H"+index)
+	
+	if(WLToolAutoSetG43H!=0)
+       MACHINE.runGCode("G43H"+index)
 	}
 	
 if(WLToolUseTabletH){
@@ -352,6 +372,8 @@ var Y=0;
 var Z=0;
 var Ltool=100;	 
 
+WLToolInitValue()
+
 enable=FILE.loadValue(WLToolFileINI,"AutoHandReplaceDialog/enable",enable);
      X=FILE.loadValue(WLToolFileINI,"AutoHandReplaceDialog/X",X);	
      Y=FILE.loadValue(WLToolFileINI,"AutoHandReplaceDialog/Y",Y);	
@@ -368,12 +390,15 @@ FILE.saveValue(WLToolFileINI,"AutoHDialog/Ltool",Ltool);
 
 index=GCODE.getValue("T")
 
-if(WLToolLastIndexT==index)  {
+if(WLToolLastIndexT==index
+ &&WLToolLastIndexT>0
+ &&index>0
+ &&WLToolAlwaysHReplace==0)  {
     SCRIPT.console("WLToolManualReplaceDialog tool set later");
-	DIALOG.question("»нструмент уже установлен. ѕродолжить?")  
-    
-	if(DIALOG.isCancel()) 
-	             return 1
+	
+	if(WLToolAutoSetG43H!=0)
+       MACHINE.runGCode("G43H"+index)
+	return 1
 	}
 		
 if(!enable) {
@@ -382,7 +407,8 @@ return 0
 }
 else
 {
-WLToolLastIndexT=0
+WLToolLastIndexT=-1
+FILE.saveValue(WLToolFileINI,"LastIndexT"  ,WLToolLastIndexT); 
 	
 MACHINE.runGCode("G53G90G0 Z0") 
 MACHINE.runGCode("G53G90G0 X"+X+"Y"+Y)
@@ -390,27 +416,28 @@ MACHINE.runGCode("G53G90G0 Z"+Z)
  
 while(MACHINE.isActiv()) SCRIPT.process()
 
- DIALOG.question("«амените инструмент на є"+index);  
+ if(WLToolIsUseLminmax()==0) {	  
+	 if(GCODE.getHTool(index)!=0) Ltool=GCODE.getHTool(index)
+		 
+     Ltool=DIALOG.enterNum("«амените инструмент на є"+index+". » ¬ведите предпалагаемую длину инструмента",Ltool,2)     
+	 } 
+	 else{
+     DIALOG.question("«амените инструмент на є"+index);  
+	 }
+	 
  if(DIALOG.isCancel()) return 0;   
 
  if(autoH==1){
 	 
  MACHINE.runGCode("G53G90G0 Z0") 
-   
- if(GCODE.getHTool(index)!=0) Ltool=GCODE.getHTool(index)
-	   
- if(WLToolIsUseLminmax()==0) 
-     {
-     Ltool=DIALOG.enterNum("¬ведите предпалагаемую длину инструмента",Ltool,2)
-     if(DIALOG.isCancel()) return 0;  
-	 } 
-  
+   	   
  if(WLToolAutoH(index,Ltool)!=1) return 0
   
  MACHINE.runGCode("G53G90G0 Z0") 
  } 
  
- WLToolLastIndexT=index
+ WLToolLastIndexT=index 
+ FILE.saveValue(WLToolFileINI,"LastIndexT"  ,WLToolLastIndexT); 
 }
 
 return 1	
@@ -448,7 +475,8 @@ return 0
 }
 else
 {
-WLToolLastIndexT=0
+WLToolLastIndexT=-1
+FILE.saveValue(WLToolFileINI,"LastIndexT"  ,WLToolLastIndexT); 
 
 if(index==0) index=1  
  
@@ -484,7 +512,8 @@ if(DIALOG.isCancel()) return 0;
    if(WLToolAutoH(GCODE.getValue("T"),Ltool)!=1)  return 0   
    }      	  
  
- WLToolLastIndexT=index
+ WLToolLastIndexT=index 
+ FILE.saveValue(WLToolFileINI,"LastIndexT"  ,WLToolLastIndexT); 
 }
 
 return 1	

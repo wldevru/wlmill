@@ -41,7 +41,7 @@ BAR.addButton("WLTABLETBUTTON")
 WLTABLETBUTTON.setShow(1);
 //WLTABLETBUTTON.setIconFrom(WLTabletPath+"WLTabletZ0.png")
 WLTABLETBUTTON.setIcon("WLTabletZ0.png")//из папки wlmillconfig/icons
-WLTABLETBUTTON.setToolTip("Tablet")
+WLTABLETBUTTON.setToolTip("Замер положения заготовки")
 WLTABLETBUTTON.setScript("WLTabletZ0Dialog()");
 }
 

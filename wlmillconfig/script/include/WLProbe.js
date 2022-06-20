@@ -1,5 +1,6 @@
 
 /*WLProbe - базовый скрипт поиска заготовки и её элементов.
+
 Установка:
  1.Копируем этот файл (WLProbe.js) в папку /wlmillconfig/script/include
  2.Подключаем,  добавляя в MScript.
@@ -8,11 +9,15 @@
    SCRIPT.includeFile("/include/WLProbe.js")
    ....	   
    }
- 3. По умолчанию скрипт WLProbe.js устанавливает вызовы своих функций на кнопку buttonUserFunc1  
+ 3. По умолчанию скрипт WLProbe.js устанавливает вызовы своих функций на кнопку WLPROBEBUTTON
     в функции WLProbeInit()	.  
 	
  4. Все настройки хранятся в файле WLProbe.ini. Если его нет, то он будет создан при инициализации скрипта. 
-
+ 
+14/06/2022 - исправлены ошибки 
+20/04/2022 - добавлена функция сканирования карты высот HMAP
+11/03/2022 - добавлена функция сканирования плоскости.
+10/02/2022 - исправлен WLProbePointZDialog(). Добавлен запрос значения высоты для установки. 
 17/11/2021 - первый релиз
 
 Для замера длины щупа как инструмента. Нужно 
@@ -102,6 +107,8 @@ WLProbeOffsetXYDialog() - Замер смещения шарика щупа относительно оси. Указывает
 
 WLProbeAutoOffsetXYDialog() - Замер смещения шарика щупа в автоматическом режиме. Диаметр колибровочного отверстия (квадрата - сторона) берется из файла ini(WLProbe.ini/AutoOffsetXYDialog/Diam). 
 Щуп поднимается на высоту G53 Z0 и перемещается к точке замера смещения, опускается. После замеряет щуп и поднимается на высоту G53 Z0.
+
+WLProbePlaneDialog() - Сканирование плоскости с записью данных в файл
 */
 
 //не изменять этот файл WLProbe.js!!!
@@ -147,27 +154,27 @@ WLPROBEBUTTON.setToolTip("Probe")
 WLPROBEBUTTON.setScript("");
 
 WLPROBEBUTTON.clearMenu() 
-WLPROBEBUTTON.addButtonMenu("Point  Z","WLProbePointZDialog()")
-WLPROBEBUTTON.addButtonMenu("Point XY","WLProbePointXYDialog()")
-WLPROBEBUTTON.addButtonMenu("Size  XY","WLProbeSizeXYDialog()")
-WLPROBEBUTTON.addButtonMenu("Circ3 XY","WLProbeCirc3XYDialog()")
-WLPROBEBUTTON.addButtonMenu("Circ4 XY","WLProbeCirc4XYDialog()")
-WLPROBEBUTTON.addButtonMenu("Rot   XY","WLProbeRotXYDialog()")
-WLPROBEBUTTON.addButtonMenu("Quad  XY","WLProbeQuadXYDialog()")
-WLPROBEBUTTON.addButtonMenu("probeH","WLProbeHDialog()")
-WLPROBEBUTTON.addButtonMenu("AutoProbeH","WLProbeAutoHDialog()")
-WLPROBEBUTTON.addButtonMenu("OfsetXY","WLProbeOffsetXYDialog()")
-WLPROBEBUTTON.addButtonMenu("AutoOfstXY","WLProbeAutoOffsetXYDialog()")
-WLPROBEBUTTON.addButtonMenu("Replace Probe","WLProbeAutoHandReplaceDialog()")
+WLPROBEBUTTON.addButtonMenu("HMap   Z","WLProbeHMapDialog()","Сканирование карты высот")
+WLPROBEBUTTON.addButtonMenu("Plane  Z","WLProbePlaneDialog()","Сканирование поверхности")
+WLPROBEBUTTON.addButtonMenu("Point  Z","WLProbePointZDialog()","Замер базовой высоты сканирования")
+WLPROBEBUTTON.addButtonMenu("Point XY","WLProbePointXYDialog()","Поиск точки касания в плоскости XY")
+WLPROBEBUTTON.addButtonMenu("Size  XY","WLProbeSizeXYDialog()","Замер расстояния в плоскости XY")
+WLPROBEBUTTON.addButtonMenu("Circ3 XY","WLProbeCirc3XYDialog()","Поиск центра круга по 3 точкам")
+WLPROBEBUTTON.addButtonMenu("Circ4 XY","WLProbeCirc4XYDialog()","Поиск центра круга по 4 точкам")
+WLPROBEBUTTON.addButtonMenu("Rot   XY","WLProbeRotXYDialog()","Поиск угла поворота по 2 точкам в плоскости XY")
+WLPROBEBUTTON.addButtonMenu("Quad  XY","WLProbeQuadXYDialog()","Поиск угла детали по 2 точкам в плоскости XY")
+WLPROBEBUTTON.addButtonMenu("probeH","WLProbeHDialog()","Замер длины щупа")
+WLPROBEBUTTON.addButtonMenu("AutoProbeH","WLProbeAutoHDialog()","Автоматический замер длины щупа")
+WLPROBEBUTTON.addButtonMenu("OfsetXY","WLProbeOffsetXYDialog()","Замер биения щупа")
+WLPROBEBUTTON.addButtonMenu("AutoOfstXY","WLProbeAutoOffsetXYDialog()","Автоматический замер биения щупа")
+WLPROBEBUTTON.addButtonMenu("Replace Probe","WLProbeAutoHandReplaceDialog()","Установка щупа в шпиндель")
 
-
-
-WLPROBEBUTTON.setEnabledSub(1,0)
-WLPROBEBUTTON.setEnabledSub(2,0)
 WLPROBEBUTTON.setEnabledSub(3,0)
 WLPROBEBUTTON.setEnabledSub(4,0)
 WLPROBEBUTTON.setEnabledSub(5,0)
 WLPROBEBUTTON.setEnabledSub(6,0)
+WLPROBEBUTTON.setEnabledSub(7,0)
+WLPROBEBUTTON.setEnabledSub(8,0)
 }
 
 function WLProbeInitValue()
@@ -220,7 +227,7 @@ if(WLProbeLmin!=0
 function WLProbeCheckInProbe()
 {
 while(MACHINE.getInProbe()){	
-	if(!DIALOG.question("Датчик inProbe не включен. Включите.")) return 0;
+    if(!DIALOG.question("Датчик inProbe не включен. Включите.")) return 0;
     }	
 
 return 1	
@@ -603,23 +610,22 @@ FILE.saveValue(WLProbeFileINI,"PointZDialog/Dist",Dist);
 
 Z=WLProbePointZ(X,Y,Z-Dist,Dist)
 
-DIALOG.question("Принять найденное Z за 0 в текущей СК?")
- 
-if(DIALOG.isOk()) 
-     {
-     MACHINE.setCurPositionSC("Z",MACHINE.getCurPosition("Z")-Z);
-	 }
-    
+var Z0=DIALOG.enterNum("Z= "+Z.toFixed(3)+" Принять найденное Z(текущей СК)= ",0);
+  
+if(DIALOG.isOk())
+	   MACHINE.setCurPositionSC("Z",MACHINE.getCurPosition("Z")-Z+Z0);
+
+  
 WLProbeXYbaseZ=Z
 
 WLProbeXYbaseZvalid=0
 
-WLPROBEBUTTON.setEnabledSub(1,1)
-WLPROBEBUTTON.setEnabledSub(2,1)
 WLPROBEBUTTON.setEnabledSub(3,1)
 WLPROBEBUTTON.setEnabledSub(4,1)
 WLPROBEBUTTON.setEnabledSub(5,1)
 WLPROBEBUTTON.setEnabledSub(6,1)
+WLPROBEBUTTON.setEnabledSub(7,1)
+WLPROBEBUTTON.setEnabledSub(8,1)
 
 return 1
 }
@@ -670,7 +676,8 @@ FILE.saveValue(WLProbeFileINI,"LastDialog/Depth",Depth);
 
 var data=WLProbePointXY(X,Y,A,WLProbeXYbaseZ+Depth);
 
-MACHINE.runGCode("G53G0 X"+data[0]+" Y"+data[1].toFixed(3))
+//MACHINE.runGCode("G53G0 X"+data[0]+" Y"+data[1].toFixed(3))
+MACHINE.runGCode("G53G0 X"+X+" Y"+Y)
 while(MACHINE.isActiv()) SCRIPT.process()
 
 return 1;
@@ -1310,4 +1317,344 @@ WLToolLastIndexT=index
 }
 
 return 1	
+}
+
+function WLProbeHMap(X0,Y0,X1,Y1,XYstep,Depth)
+{	
+var dir=1
+var F1Probe=-1
+
+if(X0==X1||Y0==Y1)
+ {
+ SCRIPT.console("WLProbeHMap error point")
+ return 0
+ }  
+  
+WLProbeInitValue()  
+
+Fprobe=FILE.loadValue(WLProbeFileINI,"ProbePlane/F1Probe",F1Probe);	
+       FILE.saveValue(WLProbeFileINI,"ProbePlane/F1Probe",F1Probe);			
+	   
+if(F1Probe>0) 
+	MACHINE.setF1GProbe(F1Probe)		   
+	
+if(X1<X0){
+ buf=X0
+ X0=X1
+ X1=buf
+ }
+
+if(Y1<Y0){
+ buf=Y0
+ Y0=Y1
+ Y1=buf
+ }
+
+Xmax=Math.ceil((X1-X0)/XYstep);
+Ymax=Math.ceil((Y1-Y0)/XYstep);
+
+Xstep=(X1-X0)/Xmax;
+Ystep=(Y1-Y0)/Ymax;
+
+MACHINE.enableDoubleGProbe(0);
+
+var Z=MACHINE.getCurPosition("Z")-Depth
+
+HMAP.create(Xmax+1,Ymax+1);
+
+for(var i=0, j=0 ;i<=Xmax;i++)
+{
+SCRIPT.console("i="+i)
+
+ if(dir>0) 
+    j=0
+else
+    j=Ymax
+
+for(;j<=Ymax&&j>=0;j+=dir)
+ {
+ MACHINE.runGCode("G0 X"+(X0+Xstep*i).toString()+" Y"+(Y0+Ystep*j).toString())
+ while(MACHINE.isActiv()) SCRIPT.process() 
+
+ X=MACHINE.getCurPosition("X")
+ Y=MACHINE.getCurPosition("Y") 
+ 
+ if(i==0&&j==0){
+   HMAP.setP0(X,Y)
+   }
+
+ if(WLProbeCheckInProbe()==0) return 0	
+
+ MACHINE.clearGProbe();  
+ MACHINE.addGProbeZ(X,Y,Z,Depth);
+ 
+ MACHINE.goGProbe();
+ while(MACHINE.isActiv()) SCRIPT.process()
+ 
+ Zp=MACHINE.getGProbe(0,"Z")
+ 
+ SCRIPT.console("Z="+Zp.toFixed(3))
+ 
+ if(i==0&&j==0){
+  HMAP.setZOffset(Zp)
+  }
+ 
+ HMAP.setValue(i,j,Zp)  
+ }
+dir=-dir;
+}  
+
+HMAP.setP1(X,Y)
+
+SCRIPT.console("WLProbePlane complete")
+
+return 1;		
+}
+
+
+function WLProbePlane(X0,Y0,X1,Y1,XYstep,Depth,nameFile)
+{	
+var dir=1
+var Split=","
+var Dec=3
+var F1Probe=-1
+
+if(X0==X1||Y0==Y1)
+ {
+ SCRIPT.console("WLProbePlane error point")
+ return 0
+ }  
+  
+WLProbeInitValue()  
+
+Fprobe=FILE.loadValue(WLProbeFileINI,"ProbePlane/F1Probe",F1Probe);	
+       FILE.saveValue(WLProbeFileINI,"ProbePlane/F1Probe",F1Probe);			
+	   
+if(F1Probe>0) 
+	MACHINE.setF1GProbe(F1Probe)		   
+
+
+Split=FILE.loadValue(WLProbeFileINI,"ProbePlane/Split",Split);	
+      FILE.saveValue(WLProbeFileINI,"ProbePlane/Split",Split);			
+
+Dec=FILE.loadValue(WLProbeFileINI,"ProbePlane/Decimals",Dec);	
+    FILE.saveValue(WLProbeFileINI,"ProbePlane/Decimals",Dec);			
+
+
+if(X1<X0){
+ buf=X0
+ X0=X1
+ X1=buf
+ }
+
+if(Y1<Y0){
+ buf=Y0
+ Y0=Y1
+ Y1=buf
+ }
+
+Xmax=Math.ceil((X1-X0)/XYstep);
+Ymax=Math.ceil((Y1-Y0)/XYstep);
+
+Xstep=(X1-X0)/Xmax;
+Ystep=(Y1-Y0)/Ymax;
+
+FILE.createFile(nameFile) 
+
+MACHINE.enableDoubleGProbe(0);
+
+var Z=MACHINE.getCurPosition("Z")-Depth
+
+for(var i=0, j=0 ;i<=Xmax;i++)
+{
+SCRIPT.console("i="+i)
+
+ if(dir>0) 
+    j=0
+else
+    j=Ymax
+
+HMAP.setEnable(false)
+ 
+for(;j<=Ymax&&j>=0;j+=dir)
+ {
+ MACHINE.runGCode("G0 X"+(X0+Xstep*i).toString()+" Y"+(Y0+Ystep*j).toString())
+ while(MACHINE.isActiv()) SCRIPT.process() 
+
+ X=MACHINE.getCurPosition("X")
+ Y=MACHINE.getCurPosition("Y") 
+ 
+ if(WLProbeCheckInProbe()==0) return 0	
+
+ MACHINE.clearGProbe();  
+ MACHINE.addGProbeZ(X,Y,Z,Depth);
+ 
+ MACHINE.goGProbe();
+ while(MACHINE.isActiv()) SCRIPT.process()
+ 
+ Zsc=MACHINE.getGProbeSC(0,"Z")
+ 
+ SCRIPT.console("Z="+Zsc.toFixed(Dec))
+ 
+ FILE.write(nameFile,(X0+Xstep*i).toFixed(Dec)+Split+(Y0+Ystep*j).toFixed(Dec)+Split+Zsc.toFixed(Dec)+'\r\n') 
+ }
+dir=-dir;
+}  
+
+SCRIPT.console("WLProbePlane complete")
+
+return 1;		
+}
+
+function WLProbePlaneDialog()
+{
+var X0=0
+var Y0=0
+
+var X1=50
+var Y1=50
+
+var Step=5
+var Depth=15
+
+var nameFile=""
+
+X0=FILE.loadValue(WLProbeFileINI,"ProbePlaneDialog/X0",X0);		
+Y0=FILE.loadValue(WLProbeFileINI,"ProbePlaneDialog/Y0",Y0);		
+X1=FILE.loadValue(WLProbeFileINI,"ProbePlaneDialog/X1",X1);		
+Y1=FILE.loadValue(WLProbeFileINI,"ProbePlaneDialog/Y1",Y1);		
+Depth=FILE.loadValue(WLProbeFileINI,"ProbePlaneDialog/Depth",Depth);		
+Step=FILE.loadValue(WLProbeFileINI,"ProbePlaneDialog/Step",Step);			
+nameFile=FILE.loadValue(WLProbeFileINI,"ProbePlaneDialog/nameFile",nameFile);		
+
+
+nameFile=DIALOG.enterSaveFile("Файл сохранения результатов",nameFile)
+if(DIALOG.isCancel())  return 0
+
+X0=DIALOG.enterNum("Введите X0",X0,2)
+if(DIALOG.isCancel())  return 0
+
+X1=DIALOG.enterNum("Введите X1",X1,2)
+if(DIALOG.isCancel())  return 0
+
+if(X0==X1)
+  {
+  DIALOG.question("X0 не может быть равен X1")  
+  return 0
+  }
+
+Y0=DIALOG.enterNum("Введите Y0",Y0,2)
+if(DIALOG.isCancel())  return 0
+
+Y1=DIALOG.enterNum("Введите Y1",Y1,2)
+if(DIALOG.isCancel())  return 0
+
+if(Y0==Y1)
+  {
+  DIALOG.question("Y0 не может быть равен Y1")  
+  return 0
+  }
+  
+Step=DIALOG.enterNum("Введите шаг сканирования",Step,2)
+if(DIALOG.isCancel())  return 0
+
+if(Step<=0)
+  {
+  DIALOG.question("шаг не может быть меньше либо равен 0")  
+  return 0
+  }  
+  
+Depth=DIALOG.enterNum("Введите расстояние поиска",Depth,2)
+if(DIALOG.isCancel())  return 0
+
+if(Depth<=0)
+  {
+  DIALOG.question("расстояние поиска не может быть меньше либо равен 0")  
+  return 0
+  }  
+
+
+FILE.saveValue(WLProbeFileINI,"ProbePlaneDialog/X0",X0);		
+FILE.saveValue(WLProbeFileINI,"ProbePlaneDialog/Y0",Y0);		
+FILE.saveValue(WLProbeFileINI,"ProbePlaneDialog/X1",X1);		
+FILE.saveValue(WLProbeFileINI,"ProbePlaneDialog/Y1",Y1);		
+FILE.saveValue(WLProbeFileINI,"ProbePlaneDialog/Step",Step);	
+FILE.saveValue(WLProbeFileINI,"ProbePlaneDialog/Depth",Depth);				
+FILE.saveValue(WLProbeFileINI,"ProbePlaneDialog/nameFile",nameFile);		
+
+WLProbePlane(X0,Y0,X1,Y1,Step,Depth,nameFile)	
+}
+
+function WLProbeHMapDialog()
+{
+var X0=0
+var Y0=0
+
+var X1=50
+var Y1=50
+
+var Step=5
+var Depth=15
+
+var nameFile=""
+
+X0=FILE.loadValue(WLProbeFileINI,"ProbePlaneDialog/X0",X0);		
+Y0=FILE.loadValue(WLProbeFileINI,"ProbePlaneDialog/Y0",Y0);		
+X1=FILE.loadValue(WLProbeFileINI,"ProbePlaneDialog/X1",X1);		
+Y1=FILE.loadValue(WLProbeFileINI,"ProbePlaneDialog/Y1",Y1);		
+Depth=FILE.loadValue(WLProbeFileINI,"ProbePlaneDialog/Depth",Depth);		
+Step=FILE.loadValue(WLProbeFileINI,"ProbePlaneDialog/Step",Step);				
+
+X0=DIALOG.enterNum("Введите X0",X0,2)
+if(DIALOG.isCancel())  return 0
+
+X1=DIALOG.enterNum("Введите X1",X1,2)
+if(DIALOG.isCancel())  return 0
+
+if(X0==X1)
+  {
+  DIALOG.question("X0 не может быть равен X1")  
+  return 0
+  }
+
+Y0=DIALOG.enterNum("Введите Y0",Y0,2)
+if(DIALOG.isCancel())  return 0
+
+Y1=DIALOG.enterNum("Введите Y1",Y1,2)
+if(DIALOG.isCancel())  return 0
+
+if(Y0==Y1)
+  {
+  DIALOG.question("Y0 не может быть равен Y1")  
+  return 0
+  }
+  
+Step=DIALOG.enterNum("Введите шаг сканирования",Step,2)
+if(DIALOG.isCancel())  return 0
+
+if(Step<=0)
+  {
+  DIALOG.question("шаг не может быть меньше либо равен 0")  
+  return 0
+  }  
+  
+Depth=DIALOG.enterNum("Введите расстояние поиска",Depth,2)
+if(DIALOG.isCancel())  return 0
+
+if(Depth<=0)
+  {
+  DIALOG.question("расстояние поиска не может быть меньше либо равен 0")  
+  return 0
+  }  
+
+
+FILE.saveValue(WLProbeFileINI,"ProbePlaneDialog/X0",X0);		
+FILE.saveValue(WLProbeFileINI,"ProbePlaneDialog/Y0",Y0);		
+FILE.saveValue(WLProbeFileINI,"ProbePlaneDialog/X1",X1);		
+FILE.saveValue(WLProbeFileINI,"ProbePlaneDialog/Y1",Y1);		
+FILE.saveValue(WLProbeFileINI,"ProbePlaneDialog/Step",Step);	
+FILE.saveValue(WLProbeFileINI,"ProbePlaneDialog/Depth",Depth);				
+FILE.saveValue(WLProbeFileINI,"ProbePlaneDialog/nameFile",nameFile);		
+
+WLProbeHMap(X0,Y0,X1,Y1,Step,Depth)	
 }
