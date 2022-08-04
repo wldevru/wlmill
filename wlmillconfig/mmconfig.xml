@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="windows-1251"?>
+<WhiteLineMillConfig strFindDrivePos="Z,XY,A" autoStartGCode="1" autoSetSafeProbe="1" actSafeProbe="2" useGModel="0" useMPG="0" feedVBacklash="100" ContinueMov="1" BacklashNextMov="1" percentManualStr="0.1,0.25,1,5,10,25,50,75,100" G1StartAt="10,0">
+    <Device WLMotion="WLM35A"/>
+    <Drive>
+        <WLMillDrive Backlash="0" name="X" indexMAxis="0" type="0" Dim="2,60,1600" MinPosition="0.000" MaxPosition="400.000" Position="0.000" orgPosition="0.000" homePosition="60.000" orgSize="5.000" logicFindPos="0" ofstSlaveAxis="0,0,0,0" feedVFind1="5" feedVFind2="5" backDistFind="5" Pad="main,0,1000,350,-1500"/>
+        <WLMillDrive Backlash="0" name="Y" indexMAxis="1" type="0" Dim="2,60,1600" MinPosition="0.000" MaxPosition="600.000" Position="0.000" orgPosition="0.000" homePosition="50.000" orgSize="5.000" logicFindPos="0" ofstSlaveAxis="0,0,0,0" feedVFind1="5" feedVFind2="5" backDistFind="5" Pad="main,0,1500,400,-1500"/>
+        <WLMillDrive Backlash="0" name="Z" indexMAxis="2" type="0" Dim="2,60,1600" MinPosition="-200.000" MaxPosition="0.000" Position="0.000" orgPosition="0.000" homePosition="50.000" orgSize="5.000" logicFindPos="0" ofstSlaveAxis="0,0,0,0" feedVFind1="5" feedVFind2="5" backDistFind="5" Pad="main,0,1500,100,-2000;mainMinus,0,2000,150,-1500"/>
+        <WLMillDrive Backlash="0" name="A" indexMAxis="3" type="1" Dim="2,360,6400" Position="0.000" orgPosition="0.000" homePosition="0.000" orgSize="5.000" logicFindPos="0" ofstSlaveAxis="0,0,0,0" feedVFind1="5" feedVFind2="5" backDistFind="5" Pad="main,0,100,10,-100"/>
+    </Drive>
+    <Position G28="X 0,Y 0,Z 150,A 0,B 0,C 0" G43="X 0,Y 0,Z 0,A 0,B 0,C 0" offsetHTool="0"/>
+    <GModel list="X,Y,Z" axisX="X 0,Y 0,Z 0,A 0,B 0,C 0;X 1,Y 0,Z 0,A 0,B 0,C 0" axisY="X 0,Y 0,Z 0,A 0,B 0,C 0;X 0,Y 1,Z 0,A 0,B 0,C 0" axisZ="X 0,Y 0,Z 0,A 0,B 0,C 0;X 0,Y 0,Z 1,A 0,B 0,C 0" axisA="X 0,Y 0,Z 0,A 0,B 0,C 0;X 0,Y 0,Z 0,A 0,B 0,C 0" axisB="X 0,Y 0,Z 0,A 0,B 0,C 0;X 0,Y 0,Z 0,A 0,B 0,C 0" axisC="X 0,Y 0,Z 0,A 0,B 0,C 0;X 0,Y 0,Z 0,A 0,B 0,C 0"/>
+    <SC i="0" GPoint="X 0,Y 0,Z 0,A 0,B 0,C 0" refPoint0="X 0,Y 0,Z 0,A 0,B 0,C 0" refPoint1="X 0,Y 0,Z 0,A 0,B 0,C 0"/>
+    <SC i="1" GPoint="X 0,Y 0,Z 0,A 0,B 0,C 0" refPoint0="X 0,Y 0,Z 0,A 0,B 0,C 0" refPoint1="X 0,Y 0,Z 0,A 0,B 0,C 0"/>
+    <SC i="2" GPoint="X 0,Y 0,Z 0,A 0,B 0,C 0" refPoint0="X 0,Y 0,Z 0,A 0,B 0,C 0" refPoint1="X 0,Y 0,Z 0,A 0,B 0,C 0"/>
+    <SC i="3" GPoint="X 0,Y 0,Z 0,A 0,B 0,C 0" refPoint0="X 0,Y 0,Z 0,A 0,B 0,C 0" refPoint1="X 0,Y 0,Z 0,A 0,B 0,C 0"/>
+    <SC i="4" GPoint="X 0,Y 0,Z 0,A 0,B 0,C 0" refPoint0="X 0,Y 0,Z 0,A 0,B 0,C 0" refPoint1="X 0,Y 0,Z 0,A 0,B 0,C 0"/>
+    <SC i="5" GPoint="X 0,Y 0,Z 0,A 0,B 0,C 0" refPoint0="X 0,Y 0,Z 0,A 0,B 0,C 0" refPoint1="X 0,Y 0,Z 0,A 0,B 0,C 0"/>
+    <SC i="6" GPoint="X 0,Y 0,Z 0,A 0,B 0,C 0" refPoint0="X 0,Y 0,Z 0,A 0,B 0,C 0" refPoint1="X 0,Y 0,Z 0,A 0,B 0,C 0"/>
+    <Tool i="1" Data="0,0,0"/>
+    <Tool i="2" Data="0,0,0"/>
+    <Tool i="3" Data="0,0,0"/>
+    <Tool i="4" Data="0,0,0"/>
+    <Tool i="5" Data="0,0,0"/>
+    <Tool i="6" Data="0,0,0"/>
+    <Tool i="7" Data="0,0,0"/>
+    <Tool i="8" Data="0,0,0"/>
+    <Tool i="9" Data="0,0,0"/>
+    <Tool i="10" Data="0,0,0"/>
+    <Tool i="11" Data="0,0,0"/>
+    <Tool i="12" Data="0,0,0"/>
+    <Tool i="13" Data="0,0,0"/>
+    <Tool i="14" Data="0,0,0"/>
+    <Tool i="15" Data="0,0,0"/>
+    <Tool i="16" Data="0,0,0"/>
+    <Tool i="17" Data="0,0,0"/>
+    <Tool i="18" Data="0,0,0"/>
+    <Tool i="19" Data="0,0,0"/>
+    <Tool i="20" Data="0,0,0"/>
+    <Tool i="21" Data="0,0,0"/>
+    <Tool i="22" Data="0,0,0"/>
+    <Tool i="23" Data="0,0,0"/>
+    <Tool i="24" Data="0,0,0"/>
+    <Tool i="25" Data="0,0,0"/>
+    <Tool i="26" Data="0,0,0"/>
+    <Tool i="27" Data="0,0,0"/>
+    <Tool i="28" Data="0,0,0"/>
+    <Tool i="29" Data="0,0,0"/>
+    <Tool i="30" Data="0,0,0"/>
+    <Tool i="31" Data="0,0,0"/>
+    <Tool i="32" Data="0,0,0"/>
+    <Tool i="33" Data="0,0,0"/>
+    <Tool i="34" Data="0,0,0"/>
+    <Tool i="35" Data="0,0,0"/>
+    <Tool i="36" Data="0,0,0"/>
+    <Tool i="37" Data="0,0,0"/>
+    <Tool i="38" Data="0,0,0"/>
+    <Tool i="39" Data="0,0,0"/>
+    <Tool i="40" Data="0,0,0"/>
+    <Tool i="41" Data="0,0,0"/>
+    <Tool i="42" Data="0,0,0"/>
+    <Tool i="43" Data="0,0,0"/>
+    <Tool i="44" Data="0,0,0"/>
+    <Tool i="45" Data="0,0,0"/>
+    <Tool i="46" Data="0,0,0"/>
+    <Tool i="47" Data="0,0,0"/>
+    <Tool i="48" Data="0,0,0"/>
+    <Tool i="49" Data="0,0,0"/>
+    <Tool i="50" Data="0,0,0"/>
+    <Tool i="51" Data="0,0,0"/>
+    <Tool i="52" Data="0,0,0"/>
+    <Tool i="53" Data="0,0,0"/>
+    <Tool i="54" Data="0,0,0"/>
+    <Tool i="55" Data="0,0,0"/>
+    <Tool i="56" Data="0,0,0"/>
+    <Tool i="57" Data="0,0,0"/>
+    <Tool i="58" Data="0,0,0"/>
+    <Tool i="59" Data="0,0,0"/>
+    <Tool i="60" Data="0,0,0"/>
+    <Tool i="61" Data="0,0,0"/>
+    <Tool i="62" Data="0,0,0"/>
+    <Tool i="63" Data="0,0,0"/>
+    <Tool i="64" Data="0,0,0"/>
+    <GCode ofstBackLongDrill="1" strRunProgram="" strInit="G64 P0.05 Q0.05"/>
+</WhiteLineMillConfig>
