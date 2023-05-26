@@ -1,8 +1,6 @@
 /*
 WLJoystick - пример работы с джостиком / геймпадом
 
-040722 - ищменен скрипт changedButtonJoystick. if(!MACHINE.isSpindleStop())
-
 Установка:
  1.Для работы с джостиком нужно определить функции которые вызываются при изменение данных от джостика.
  
@@ -46,12 +44,25 @@ WLJoystick - пример работы с джостиком / геймпадом
 */
 
 function changedButtonJoystick(id,button,press)
-{
+{/*
+ if(press)
+  SCRIPT.console("Joystick "+id+" button "+button+" pressed")
+ else                 
+  SCRIPT.console("Joystick "+id+" button "+button+" released")
+	*/
+	SCRIPT.console("Jostick"+id+" button "+button+" press "+press)	
+	
 if(id==0)
 {	
 if(press)
 switch(button)
 {
+case 3:   MACHINE.runGCode("G53 G0 Y480 Z0");
+          break;	
+		  
+case 4:   MACHINE.runGCode("G53 G0 Y450 Z-50");
+          break;
+		  
 case 11:  MACHINE.startMov() 
           break;
 
@@ -66,6 +77,8 @@ case 6:   SCRIPT.console("press 6")
 case 14:   MACHINE.plusPercentManual()  
            break;
 
+case 14:   MACHINE.plusPercentManual()  
+           break;
 case 13:   MACHINE.minusPercentManual()
            break;
 

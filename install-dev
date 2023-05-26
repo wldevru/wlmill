@@ -7,3 +7,5 @@ sudo apt install qtscript5-dev
 sudo apt install qtmultimedia5-dev
 sudo apt install libsdl2-dev
 sudo apt install libqt5multimedia5-plugins
+sudo apt install libqt5svg5-dev
+sudo apt install libudev-dev

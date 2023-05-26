@@ -8,10 +8,10 @@
                 <outputs size="13" inv="1,2,4"/>
             </WLModuleIOPut>
             <WLModuleAxis size="4" inEMGStop="0" inSDStop="0" Fmax="0">
-                <Axis index="0" kSTCurve="0" delaySCurve="0" typeMotor="1" typePulse="0" outSDinv="0" inORG="0" inPEL="0" actInPEL="0" inMEL="0" actInMEL="0" inALM="0" actInALM="0" outRALM="0" outENB="0" encoder="255" pid="1.00000,0.00000,0.00000" errPid="100" stepMotorMParPlus="1.00000,-1.00000,0.00000,1.00000" stepMotorMParMinus="1.00000,-1.00000,0.00000,1.00000"/>
-                <Axis index="1" kSTCurve="0" delaySCurve="0" typeMotor="1" typePulse="0" outSDinv="0" inORG="0" inPEL="0" actInPEL="0" inMEL="0" actInMEL="0" inALM="0" actInALM="0" outRALM="0" outENB="0" encoder="255" pid="1.00000,0.00000,0.00000" errPid="100" stepMotorMParPlus="1.00000,-1.00000,0.00000,1.00000" stepMotorMParMinus="1.00000,-1.00000,0.00000,1.00000"/>
-                <Axis index="2" kSTCurve="0" delaySCurve="0" typeMotor="1" typePulse="0" outSDinv="0" inORG="0" inPEL="0" actInPEL="0" inMEL="0" actInMEL="0" inALM="0" actInALM="0" outRALM="0" outENB="0" encoder="255" pid="1.00000,0.00000,0.00000" errPid="100" stepMotorMParPlus="1.00000,-1.00000,0.00000,1.00000" stepMotorMParMinus="1.00000,-1.00000,0.00000,1.00000"/>
-                <Axis index="3" kSTCurve="0" delaySCurve="0" typeMotor="1" typePulse="0" outSDinv="0" inORG="0" inPEL="0" actInPEL="0" inMEL="0" actInMEL="0" inALM="0" actInALM="0" outRALM="0" outENB="0" encoder="255" pid="1.00000,0.00000,0.00000" errPid="100" stepMotorMParPlus="1.00000,-1.00000,0.00000,1.00000" stepMotorMParMinus="1.00000,-1.00000,0.00000,1.00000"/>
+                <Axis index="0" kSTCurve="0" delaySCurve="0" typeMotor="1" typePulse="0" outSDinv="0" inORG="0" actInORG="0" inPEL="0" actInPEL="0" inMEL="0" actInMEL="0" inALM="0" actInALM="0" outRALM="0" outENB="0" encoder="255" pid="1.00000,0.00000,0.00000,0.00000,0.00000" errPid="0.00000,0.00000,0.00000,1.00000,%5" stepMotorMParPlus="1.00000,-1.00000,0.00000,1.00000" stepMotorMParMinus="1.00000,-1.00000,0.00000,1.00000"/>
+                <Axis index="1" kSTCurve="0" delaySCurve="0" typeMotor="1" typePulse="0" outSDinv="0" inORG="0" actInORG="0" inPEL="0" actInPEL="0" inMEL="0" actInMEL="0" inALM="0" actInALM="0" outRALM="0" outENB="0" encoder="255" pid="1.00000,0.00000,0.00000,0.00000,0.00000" errPid="0.00000,0.00000,0.00000,1.00000,%5" stepMotorMParPlus="1.00000,-1.00000,0.00000,1.00000" stepMotorMParMinus="1.00000,-1.00000,0.00000,1.00000"/>
+                <Axis index="2" kSTCurve="0" delaySCurve="0" typeMotor="1" typePulse="0" outSDinv="0" inORG="0" actInORG="0" inPEL="0" actInPEL="0" inMEL="0" actInMEL="0" inALM="0" actInALM="0" outRALM="0" outENB="0" encoder="255" pid="1.00000,0.00000,0.00000,0.00000,0.00000" errPid="0.00000,0.00000,0.00000,1.00000,%5" stepMotorMParPlus="1.00000,-1.00000,0.00000,1.00000" stepMotorMParMinus="1.00000,-1.00000,0.00000,1.00000"/>
+                <Axis index="3" kSTCurve="0" delaySCurve="0" typeMotor="1" typePulse="0" outSDinv="0" inORG="0" actInORG="0" inPEL="0" actInPEL="0" inMEL="0" actInMEL="0" inALM="0" actInALM="0" outRALM="0" outENB="0" encoder="255" pid="1.00000,0.00000,0.00000,0.00000,0.00000" errPid="0.00000,0.00000,0.00000,1.00000,%5" stepMotorMParPlus="1.00000,-1.00000,0.00000,1.00000" stepMotorMParMinus="1.00000,-1.00000,0.00000,1.00000"/>
             </WLModuleAxis>
             <WLModulePWM>
                 <outputs size="3">
@@ -20,10 +20,13 @@
                     <PWM index="2" Freq="2000" inv="0"/>
                 </outputs>
             </WLModulePWM>
-            <WLModulePlanner SmoothAngGr="15" KFpause="0.25" SOut="0,0" accSOut="3960" decSOut="-9900" inProbe="0" inPause="0" inStop="0">
-                <spindleData index="0" inValue="200.00000" outValue="0.00000"/>
-                <spindleData index="1" inValue="20000.00000" outValue="1.00000"/>
-            </WLModulePlanner>
+            <WLModuleSpindle size="1">
+                <WLSpindle index="0" SOut="58,96" accSOut="3960" decSOut="-9900" fastChangeSOut="1" outENB="0" outRUN="0" outFW="0" outRE="0" inReady="0">
+                    <data i="0" inValue="200.00000" outValue="0.00000"/>
+                    <data i="1" inValue="20000.00000" outValue="1.00000"/>
+                </WLSpindle>
+            </WLModuleSpindle>
+            <WLModulePlanner SmoothAngGr="15" waitAxis="0" waitSFastElement="1" KFpause="0.25" inProbe="0" inPause="0" inStop="0"/>
         </Modules>
     </WLM35A>
 </WLDevice>

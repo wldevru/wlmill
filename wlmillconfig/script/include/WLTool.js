@@ -32,7 +32,7 @@ WLTool - базовый скрипт работы с инструментом
 
 WLToolH(index,Dist)               - »змерение длины инструмента либо базового смещени€ (index=0,Dist - дистанци€ поиска) 
 WLToolHDialog()                   - »змерение длины инструмента либо базового смещени€
-WLToolAutoHDialog()               - »змерение длины нструмента с перемещением в точку измерени€. ѕеремещение в G53 Z0, перемещение по XY. 
+WLToolAutoHDialog(autoH)          - »змерение длины нструмента с перемещением в точку измерени€. ѕеремещение в G53 Z0, перемещение по XY. 
 WLToolHandReplaceDialog(autoH)  - «амена нструмента с перемещением в точку замены. ѕеремещение в G53 Z0, перемещение по XY.
                                     ≈сли autoH = 1 то будет произведен замер длины после смены инструмента. ¬озвращает 1 в случае успеха.
 
@@ -57,10 +57,11 @@ var WLToolAlwaysHReplace= 1  //всегда переустанавливать инструмент
 var WLToolLmin = 5     //минимальна€ длина инструмента
 var WLToolLmax = 80    //максимальна длина инструмента 
                        //≈сли  WLToolLmin==0 и WLToolLmax==0 то перед измерением будет каждый раз запрашиватьс€ примерна€ длинна инструмента. ј значение по умолчанию будет братьс€ из таблицы инструментов.
+		   
 
 function WLToolInit()
 {
-WLToolInitButton(TOOLBAR1)
+WLToolInitButton(TOOLBARTOOLS)
 WLToolInitValue();
 
 GCODE.setT(WLToolLastIndexT)
@@ -71,6 +72,8 @@ function WLToolInitButton(BAR)
 BAR.addButton("WLTOOLBUTTON")	
 
 WLTOOLBUTTON.setText("TOOL")
+WLTOOLBUTTON.setIcon("WLTool.png")
+WLTOOLBUTTON.setToolTip("Probe")
 
 WLTOOLBUTTON.clearMenu() 
 WLTOOLBUTTON.addButtonMenu("toolH","WLToolHDialog()","«амер длины инструмента")
@@ -478,11 +481,13 @@ else
 WLToolLastIndexT=-1
 FILE.saveValue(WLToolFileINI,"LastIndexT"  ,WLToolLastIndexT); 
 
-if(index==0) index=1  
+index=TOOLBARTOOLS.selectTool()
+
+if(index<=0) index=1  
  
 index=DIALOG.enterNum("¬ведите номер инструмента є",index)  
 if(DIALOG.isCancel()) return 0
- 
+
 MACHINE.runGCode("G53G90G0 Z0") 
 MACHINE.runGCode("G53G90G0 X"+X+"Y"+Y)
 MACHINE.runGCode("G53G90G0 Z"+Z) 
@@ -492,8 +497,8 @@ while(MACHINE.isActiv()) SCRIPT.process()
 DIALOG.question("«амените инструмент на є"+index);  
 if(DIALOG.isCancel()) return 0;   
 
- if(DIALOG.getNum()>0) {
-     MACHINE.runGCode("T"+DIALOG.getNum())
+ if(index>0) {
+     MACHINE.runGCode("T"+index)
      }
   
  DIALOG.question("ѕроизвести замер длины инструмента? є"+index)  

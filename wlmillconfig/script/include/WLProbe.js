@@ -14,6 +14,7 @@
 	
  4. Все настройки хранятся в файле WLProbe.ini. Если его нет, то он будет создан при инициализации скрипта. 
  
+02/09/2022 - добавлено сохранение начальной точки проббинга 
 14/06/2022 - исправлены ошибки 
 20/04/2022 - добавлена функция сканирования карты высот HMAP
 11/03/2022 - добавлена функция сканирования плоскости.
@@ -109,12 +110,18 @@ WLProbeAutoOffsetXYDialog() - Замер смещения шарика щупа в автоматическом режиме
 Щуп поднимается на высоту G53 Z0 и перемещается к точке замера смещения, опускается. После замеряет щуп и поднимается на высоту G53 Z0.
 
 WLProbePlaneDialog() - Сканирование плоскости с записью данных в файл
+
+WLProbeToStartPointXYZ()    - Вернуться в начальное положение
+WLProbeClearStartPointXYZ() - Сбросить начальное положение
+WLProbeSaveStartPointXYZ()  - Запомнить начальное положение
+
 */
 
 //не изменять этот файл WLProbe.js!!!
 //все параметры в WLProbe.ini который находится в папке с WLProbe.js. Если файла WLProbe.ini нет, то он будет создан автоматически.
 //параметры по умолчанию
 
+var WLProbeF0Probe  =   0 //скорость первого касания в мм/мин
 var WLProbeF1Probe  =   250 //скорость первого касания в мм/мин
 var WLProbeF2Probe  =    50 //скорость второго касания в мм/мин
 var WLProbeHeadDiam  =    2 //диаметр шарика щупа
@@ -126,13 +133,21 @@ var WLProbeFindDistZ_A = 10 //расстояние поиска Z после предполагаемой точки кон
 var WLProbeSDStop    =    1 //включение(1)/выключение(0) плавной остановки
 
 var WLProbeXYbaseZ       = 0//базовая высота
-var WLProbeXYbaseZvalid  = 1
+var WLProbeXYbaseZvalid  = 0
 
 var WLProbeDX    =   0 //смещение(несоосность) по X
 var WLProbeDY    =   0 //смещение(несоосность) по Y
 
-var WLProbeLmin = 40   //минимальная длина щупа (инструмента)
-var WLProbeLmax = 80   //максимальна длина щупа (инструмента) 
+var WLProbeStartPointX //Начальное положение X Y Z перед измерением
+var WLProbeStartPointY //
+var WLProbeStartPointZ //
+
+var WLProbeStartPointXYZValid=0
+
+var WLProbeFastDialog = 0 //пропустить ввод данных диалога которые были записаны в ini
+
+var WLProbeLmin  = 20   //минимальная длина щупа (инструмента)
+var WLProbeLmax = 60   //максимальна длина щупа (инструмента) 
                        //Если  WLProbeLmin==0 и WLProbeLmax==0 то перед измерением будет каждый раз запрашиваться примерная длинна инструмента. А значение по умолчанию будет браться из таблицы инструментов.
 
 
@@ -144,9 +159,9 @@ WLProbeInitValue();
 
 function WLProbeInitButton(BAR)
 {
+SCRIPT.console("WLProbeInitButton(BAR)")	
+	
 BAR.addButton("WLPROBEBUTTON")		
-
-WLPROBEBUTTON.setShow(1);
 //WLPROBEBUTTON.setIconFrom(WLProbePath+"WLProbe.png")
 WLPROBEBUTTON.setIcon("WLProbe.png")
 WLPROBEBUTTON.setToolTip("Probe")
@@ -154,51 +169,65 @@ WLPROBEBUTTON.setToolTip("Probe")
 WLPROBEBUTTON.setScript("");
 
 WLPROBEBUTTON.clearMenu() 
-WLPROBEBUTTON.addButtonMenu("HMap   Z","WLProbeHMapDialog()","Сканирование карты высот")
-WLPROBEBUTTON.addButtonMenu("Plane  Z","WLProbePlaneDialog()","Сканирование поверхности")
-WLPROBEBUTTON.addButtonMenu("Point  Z","WLProbePointZDialog()","Замер базовой высоты сканирования")
-WLPROBEBUTTON.addButtonMenu("Point XY","WLProbePointXYDialog()","Поиск точки касания в плоскости XY")
-WLPROBEBUTTON.addButtonMenu("Size  XY","WLProbeSizeXYDialog()","Замер расстояния в плоскости XY")
-WLPROBEBUTTON.addButtonMenu("Circ3 XY","WLProbeCirc3XYDialog()","Поиск центра круга по 3 точкам")
-WLPROBEBUTTON.addButtonMenu("Circ4 XY","WLProbeCirc4XYDialog()","Поиск центра круга по 4 точкам")
-WLPROBEBUTTON.addButtonMenu("Rot   XY","WLProbeRotXYDialog()","Поиск угла поворота по 2 точкам в плоскости XY")
-WLPROBEBUTTON.addButtonMenu("Quad  XY","WLProbeQuadXYDialog()","Поиск угла детали по 2 точкам в плоскости XY")
-WLPROBEBUTTON.addButtonMenu("probeH","WLProbeHDialog()","Замер длины щупа")
-WLPROBEBUTTON.addButtonMenu("AutoProbeH","WLProbeAutoHDialog()","Автоматический замер длины щупа")
-WLPROBEBUTTON.addButtonMenu("OfsetXY","WLProbeOffsetXYDialog()","Замер биения щупа")
-WLPROBEBUTTON.addButtonMenu("AutoOfstXY","WLProbeAutoOffsetXYDialog()","Автоматический замер биения щупа")
-WLPROBEBUTTON.addButtonMenu("Replace Probe","WLProbeAutoHandReplaceDialog()","Установка щупа в шпиндель")
 
-WLPROBEBUTTON.setEnabledSub(3,0)
-WLPROBEBUTTON.setEnabledSub(4,0)
-WLPROBEBUTTON.setEnabledSub(5,0)
-WLPROBEBUTTON.setEnabledSub(6,0)
-WLPROBEBUTTON.setEnabledSub(7,0)
-WLPROBEBUTTON.setEnabledSub(8,0)
+WLPROBEBUTTON.addButtonSubMenu("toStart","To last Start"," WLProbeToStartPointXYZ()","В начальную позицию предыдущего поиска")
+
+WLPROBEBUTTON.addButtonSubMenu("HMap","HMap Z","WLProbeHMapDialog()","Сканирование карты высот")
+WLPROBEBUTTON.addButtonSubMenu("PlaneZ","Plane Z","WLProbePlaneDialog()","Сканирование поверхности")
+WLPROBEBUTTON.addButtonSubMenu("PointZ","Point Z","WLProbePointZDialog()","Замер базовой высоты сканирования")
+
+WLPROBEBUTTON.addButtonSubMenu("Point XY","Point XY","WLProbePointXYDialog()","Поиск точки касания в плоскости XY")
+WLPROBEBUTTON.addButtonSubMenu("Size XY","Size  XY","WLProbeSizeXYDialog()","Замер расстояния в плоскости XY")
+WLPROBEBUTTON.addButtonSubMenu("Circ3 XY","Circ3 XY","WLProbeCirc3XYDialog()","Поиск центра круга по 3 точкам")
+WLPROBEBUTTON.addButtonSubMenu("Circ4 XY","Circ4 XY","WLProbeCirc4XYDialog()","Поиск центра круга по 4 точкам")
+WLPROBEBUTTON.addButtonSubMenu("Rot XY","Rot   XY","WLProbeRotXYDialog()","Поиск угла поворота по 2 точкам в плоскости XY")
+WLPROBEBUTTON.addButtonSubMenu("Quad XY","Quad  XY","WLProbeQuadXYDialog()","Поиск угла детали по 2 точкам в плоскости XY")
+
+WLPROBEBUTTON.setEnabledSub("toStart",0)
+WLPROBEBUTTON.setEnabledSub("Point XY",0)
+WLPROBEBUTTON.setEnabledSub("Size XY",0)
+WLPROBEBUTTON.setEnabledSub("Circ3 XY",0)
+WLPROBEBUTTON.setEnabledSub("Circ4 XY",0)
+WLPROBEBUTTON.setEnabledSub("Rot XY",0)
+WLPROBEBUTTON.setEnabledSub("Quad XY",0)
+
+TOOLBARTOOLS.addButton("WLPROBETBUTTON")
+
+WLPROBETBUTTON.setToolTip("Probe")	
+WLPROBETBUTTON.setIcon("WLProbe.png")	
+
+WLPROBETBUTTON.addButtonMenu("ProbeH","WLProbeHDialog()","Замер длины щупа")
+WLPROBETBUTTON.addButtonMenu("AutoProbeH","WLProbeAutoHDialog()","Автоматический замер длины щупа")
+WLPROBETBUTTON.addButtonMenu("OfsetXY","WLProbeOffsetXYDialog()","Замер биения щупа")
+WLPROBETBUTTON.addButtonMenu("AutoOfstXY","WLProbeAutoOffsetXYDialog()","Автоматический замер биения щупа")
+WLPROBETBUTTON.addButtonMenu("Replace Probe","WLProbeAutoHandReplaceDialog()","Установка щупа в шпиндель")
 }
 
 function WLProbeInitValue()
 {		
+WLProbeF0Probe =FILE.loadValue(WLProbeFileINI,"F0Probe" ,WLProbeF0Probe);
 WLProbeF1Probe =FILE.loadValue(WLProbeFileINI,"F1Probe" ,WLProbeF1Probe);
 WLProbeF2Probe =FILE.loadValue(WLProbeFileINI,"F2Probe" ,WLProbeF2Probe);
 WLProbeHeadDiam=FILE.loadValue(WLProbeFileINI,"HeadDiam",WLProbeHeadDiam);
 WLProbeBackDist=FILE.loadValue(WLProbeFileINI,"BackDist",WLProbeBackDist); 
 WLProbeSDStop  =FILE.loadValue(WLProbeFileINI,"SDStop",WLProbeSDStop); 
 
-  WLProbeFindDistXY=FILE.loadValue(WLProbeFileINI,"FindDistXY",WLProbeFindDistXY);
+WLProbeFindDistXY=FILE.loadValue(WLProbeFileINI,"FindDistXY",WLProbeFindDistXY);
 WLProbeFindDistXY_A=FILE.loadValue(WLProbeFileINI,"FindDistXY_A",WLProbeFindDistXY_A);
-   WLProbeFindDistZ=FILE.loadValue(WLProbeFileINI,"FindDistZ", WLProbeFindDistZ); 
- WLProbeFindDistZ_A=FILE.loadValue(WLProbeFileINI,"FindDistZ_A", WLProbeFindDistZ_A); 
+WLProbeFindDistZ=FILE.loadValue(WLProbeFileINI,"FindDistZ", WLProbeFindDistZ); 
+WLProbeFindDistZ_A=FILE.loadValue(WLProbeFileINI,"FindDistZ_A", WLProbeFindDistZ_A); 
  
 WLProbeLmin=FILE.loadValue(WLProbeFileINI,"Lmin",WLProbeLmin); 
 WLProbeLmax=FILE.loadValue(WLProbeFileINI,"Lmax",WLProbeLmax); 
 
 MACHINE.setHeadDiamGProbe(WLProbeHeadDiam)
+MACHINE.setF0GProbe(WLProbeF0Probe)	
 MACHINE.setF1GProbe(WLProbeF1Probe)	
 MACHINE.setF2GProbe(WLProbeF2Probe)	
 MACHINE.setBackDistGProbe(WLProbeBackDist)
 MACHINE.setSDStopGProbe(WLProbeSDStop)
 
+FILE.saveValue(WLProbeFileINI,"F0Probe" ,WLProbeF0Probe);
 FILE.saveValue(WLProbeFileINI,"F1Probe" ,WLProbeF1Probe);
 FILE.saveValue(WLProbeFileINI,"F2Probe" ,WLProbeF2Probe);
 FILE.saveValue(WLProbeFileINI,"HeadDiam",WLProbeHeadDiam);
@@ -235,7 +264,7 @@ return 1
 
 function WLProbeNReady()
 {
-if(WLProbeXYbaseZvalid){
+if(WLProbeXYbaseZvalid==0){
 	DIALOG.message("Сначала нужно определить плоскость замера Probe Z");
 	return 1;
     }	
@@ -252,6 +281,36 @@ WLProbeDX=0
 WLProbeDY=0	
 }
 
+function WLProbeClearStartPointXYZ()// Сбросить начальное положение
+{ 
+WLProbeStartPointXYZValid=0 		
+WLPROBEBUTTON.setEnabledSub("toStart",0)
+}
+
+function WLProbeSaveStartPointXYZ()// Запомнить начальное положение
+{
+WLProbeStartPointX=MACHINE.getCurPosition("X")
+WLProbeStartPointY=MACHINE.getCurPosition("Y")
+WLProbeStartPointZ=MACHINE.getCurPosition("Z")
+ 
+WLProbeStartPointXYZValid=1 		
+WLPROBEBUTTON.setEnabledSub("toStart",1)
+}
+
+function WLProbeToStartPointXYZ()// Вернуться в начальное положение
+{
+if(WLProbeStartPointXYZValid){ 	
+
+ if(MACHINE.getCurPosition("Z")<WLProbeStartPointZ) {
+     MACHINE.runGCode("G53 G90 G0 Z"+WLProbeStartPointZ);
+     }
+
+ MACHINE.runGCode("G53 G90 G0 X"+WLProbeStartPointX+" Y"+WLProbeStartPointY);
+
+ while(MACHINE.isActiv()) SCRIPT.process()
+ }		
+}
+
 function WLProbeOffsetXY(Diam)//Поиск смещения щупа
 {
 WLProbeInitValue()
@@ -262,6 +321,7 @@ var Z=MACHINE.getCurPosition("Z")
 
 if(WLProbeCheckInProbe()==0) return 0	
 
+WLProbeSaveStartPointXYZ()
 WLProbeInitValue()
 
 if(Diam<=0)
@@ -349,6 +409,8 @@ FILE.saveValue(WLProbeFileINI,"AutoOffsetXYDialog/Diam",Diam);
 
 if(WLProbeCheckInProbe()==0) return 0			
 
+WLProbeSaveStartPointXYZ()
+
 if(!enable) {
 DIALOG.question("Данный режим не активен! Нужно активировать с помощью переменной enable в файле WLProbe.ini")  
 return 0
@@ -388,6 +450,8 @@ var DistA=WLProbeFindDistZ_A
 var Z=0
 
 if(WLProbeCheckInProbe()==0) return 0
+
+WLProbeSaveStartPointXYZ()
 
 Dist =FILE.loadValue(WLProbeFileINI,"AutoHDialog/FindDist",Dist);  
 DistA=FILE.loadValue(WLProbeFileINI,"AutoHDialog/FindDist_A",DistA);  
@@ -437,6 +501,8 @@ FILE.saveValue(WLProbeFileINI,"HDialog/Lprobe",Lprobe);
 
 if(WLProbeCheckInProbe()==0) return 0	
 
+WLProbeSaveStartPointXYZ()
+
 index=GCODE.getValue("T")
 
 if(index==0) index=1
@@ -483,6 +549,8 @@ FILE.saveValue(WLProbeFileINI,"AutoHDialog/X",X);
 FILE.saveValue(WLProbeFileINI,"AutoHDialog/Y",Y);
 
 if(WLProbeCheckInProbe()==0) return 0	
+
+WLProbeSaveStartPointXYZ()
 
 if(Lprobe<=0) 
     {
@@ -572,6 +640,10 @@ else
 function WLProbePointZ(X,Y,Z,Depth)//поиск плоскости
 {
 WLProbeInitValue()
+
+if(WLProbeCheckInProbe()==0) return 0	
+
+WLProbeSaveStartPointXYZ()
 	 
 MACHINE.clearGProbe();
 MACHINE.enableDoubleGProbe(1);
@@ -595,16 +667,20 @@ var Y
 var Z
 var Dist=20
 
-if(WLProbeCheckInProbe()==0) return 0	
-
 Dist=FILE.loadValue(WLProbeFileINI,"PointZDialog/Dist",Dist);
 
 X=MACHINE.getCurPosition("X")
 Y=MACHINE.getCurPosition("Y")
 Z=MACHINE.getCurPosition("Z")
 
+if(WLProbeFastDialog){
+WLProbeFastDialog = 0;	
+}
+else
+{
 Dist=DIALOG.enterNum("Введите дистанцию поиска плоскости:",Dist)
 if(DIALOG.isCancel()||Dist<=0)  return 0
+}
 
 FILE.saveValue(WLProbeFileINI,"PointZDialog/Dist",Dist);
 
@@ -618,14 +694,15 @@ if(DIALOG.isOk())
   
 WLProbeXYbaseZ=Z
 
-WLProbeXYbaseZvalid=0
+WLProbeXYbaseZvalid=1
 
-WLPROBEBUTTON.setEnabledSub(3,1)
-WLPROBEBUTTON.setEnabledSub(4,1)
-WLPROBEBUTTON.setEnabledSub(5,1)
-WLPROBEBUTTON.setEnabledSub(6,1)
-WLPROBEBUTTON.setEnabledSub(7,1)
-WLPROBEBUTTON.setEnabledSub(8,1)
+WLPROBEBUTTON.setEnabledSub("toStart",1)
+WLPROBEBUTTON.setEnabledSub("Point XY",1)
+WLPROBEBUTTON.setEnabledSub("Size XY",1)
+WLPROBEBUTTON.setEnabledSub("Circ3 XY",1)
+WLPROBEBUTTON.setEnabledSub("Circ4 XY",1)
+WLPROBEBUTTON.setEnabledSub("Rot XY",1)
+WLPROBEBUTTON.setEnabledSub("Quad XY",1)
 
 return 1
 }
@@ -633,6 +710,10 @@ return 1
 function WLProbePointXY(X,Y,A,Depth) //простой поиск контакта "под щупом" в плоскости XY
 {
 WLProbeInitValue()
+
+if(WLProbeCheckInProbe()==0) return 0	
+
+WLProbeSaveStartPointXYZ()
 	
 MACHINE.clearGProbe();
 
@@ -665,19 +746,24 @@ Y=MACHINE.getCurPosition("Y")
 A=FILE.loadValue(WLProbeFileINI,"PointXYDialog/A",A);
 Depth=FILE.loadValue(WLProbeFileINI,"LastDialog/Depth",Depth);
 
+if(WLProbeFastDialog){
+WLProbeFastDialog = 0;	
+}
+else
+{
 A=DIALOG.enterNum("Введите угол поиска =",A)
 if(DIALOG.isCancel()) return 0
 
 Depth=DIALOG.enterNum("Введите смещение плоскости поиска (ProbeZ)",Depth)
 if(DIALOG.isCancel()) return 0
+}
 
 FILE.saveValue(WLProbeFileINI,"PointXYDialog/A",A);
 FILE.saveValue(WLProbeFileINI,"LastDialog/Depth",Depth);
 
 var data=WLProbePointXY(X,Y,A,WLProbeXYbaseZ+Depth);
 
-//MACHINE.runGCode("G53G0 X"+data[0]+" Y"+data[1].toFixed(3))
-MACHINE.runGCode("G53G0 X"+X+" Y"+Y)
+MACHINE.runGCode("G53G0 X"+data[0]+" Y"+data[1])
 while(MACHINE.isActiv()) SCRIPT.process()
 
 return 1;
@@ -694,6 +780,10 @@ var Dist=WLProbeFindDistXY
 var DistA=WLProbeFindDistXY_A
 
 var Ar=A*Math.PI/180.0
+
+if(WLProbeCheckInProbe()==0) return 0	
+
+WLProbeSaveStartPointXYZ()
 
 if(R!=0){
 
@@ -746,7 +836,11 @@ A=FILE.loadValue(WLProbeFileINI,"SizeXYDialog/A",A);
 R=FILE.loadValue(WLProbeFileINI,"SizeXYDialog/R",R);
 Depth=FILE.loadValue(WLProbeFileINI,"lastDialog/Depth",Depth);
 
-
+if(WLProbeFastDialog){
+WLProbeFastDialog = 0;	
+}
+else
+{
 R=DIALOG.enterNum("Введите внутренний+ (наружний-)  размер =",R*2)/2
 if(DIALOG.isCancel()||R==0) return 0
 
@@ -755,6 +849,7 @@ if(DIALOG.isCancel()) return 0
 
 Depth=DIALOG.enterNum("Введите смещение плоскости поиска (ProbeZ)",Depth)
 if(DIALOG.isCancel())  return 0
+}
 
 FILE.saveValue(WLProbeFileINI,"SizeXYDialog/A",A);
 FILE.saveValue(WLProbeFileINI,"SizeXYDialog/R",R);
@@ -778,6 +873,10 @@ var dY
 var R
 var Dist =WLProbeFindDistXY
 var DistA=WLProbeFindDistXY_A
+
+if(WLProbeCheckInProbe()==0) return 0	
+
+WLProbeSaveStartPointXYZ()
 
 if(R!=0){
  var Ar=A*Math.PI/180.0
@@ -860,6 +959,11 @@ A=FILE.loadValue(WLProbeFileINI,"Circ4XYDialog/A",A);
 R=FILE.loadValue(WLProbeFileINI,"Circ4XYDialog/R",R);
 Depth=FILE.loadValue(WLProbeFileINI,"lastDialog/Depth",Depth);
 
+if(WLProbeFastDialog){
+WLProbeFastDialog = 0;	
+}
+else
+{
 R=DIALOG.enterNum("Введите внутренний+ (наружный-)  диаметр =",R*2)/2
 if(DIALOG.isCancel()||R==0) return 0
 
@@ -868,6 +972,7 @@ if(DIALOG.isCancel()) return 0
 
 Depth=DIALOG.enterNum("Введите смещение плоскости поиска (ProbeZ)",Depth)
 if(DIALOG.isCancel()) return 0
+}
 
 FILE.saveValue(WLProbeFileINI,"Circ4XYDialog/A",A);
 FILE.saveValue(WLProbeFileINI,"Circ4XYDialog/R",R);
@@ -892,6 +997,10 @@ var dY
 var dA=0
 var Dist=WLProbeFindDistXY
 var DistA=WLProbeFindDistXY_A
+
+if(WLProbeCheckInProbe()==0) return 0	
+
+WLProbeSaveStartPointXYZ()
  
 if(R!=0){
  
@@ -982,6 +1091,11 @@ A3=FILE.loadValue(WLProbeFileINI,"Circ3XYDialog/A3",A3);
 R=FILE.loadValue(WLProbeFileINI,"Circ3XYDialog/R",R);
 Depth=FILE.loadValue(WLProbeFileINI,"lastDialog/Depth",Depth);
 
+if(WLProbeFastDialog){
+WLProbeFastDialog = 0;	
+}
+else
+{
 R=DIALOG.enterNum("Введите внутренний+ (наружный-)  диаметр =",R*2)/2
 if(DIALOG.isCancel()||R==0) return 0
 
@@ -996,6 +1110,7 @@ if(DIALOG.isCancel()) return 0
 
 Depth=DIALOG.enterNum("Введите смещение плоскости поиска (ProbeZ)",Depth)
 if(DIALOG.isCancel()) return 0
+}
 
 FILE.saveValue(WLProbeFileINI,"Circ3XYDialog/A1",A1);
 FILE.saveValue(WLProbeFileINI,"Circ3XYDialog/A2",A2);
@@ -1024,6 +1139,10 @@ MACHINE.clearGProbe();
 MACHINE.enableDoubleGProbe(1);
 
 var A=0
+
+if(WLProbeCheckInProbe()==0) return 0	
+
+WLProbeSaveStartPointXYZ()
 
 if(R<0) 
 {
@@ -1080,6 +1199,11 @@ R=FILE.loadValue(WLProbeFileINI,"QuadXYDialog/R",R);
 Q=FILE.loadValue(WLProbeFileINI,"QuadXYDialog/Q",Q);
 Depth=FILE.loadValue(WLProbeFileINI,"lastDialog/Depth",Depth);
 
+if(WLProbeFastDialog){
+WLProbeFastDialog = 0;	
+}
+else
+{
 R=DIALOG.enterNum("Введите отход от угла внутрений+ (наружний-) =",R)
 if(DIALOG.isCancel()||R==0) return 0
 
@@ -1088,6 +1212,7 @@ if(DIALOG.isCancel()||Q<1||Q>5) return 0
 
 Depth=DIALOG.enterNum("Введите смещение плоскости поиска (ProbeZ)",Depth)
 if(DIALOG.isCancel()) return 0
+}
 
 FILE.saveValue(WLProbeFileINI,"QuadXYDialog/R",R);
 FILE.saveValue(WLProbeFileINI,"QuadXYDialog/Q",Q);
@@ -1111,8 +1236,11 @@ WLProbeInitValue()
 	
 var dX
 var dY
-
 var Ar=A*Math.PI/180.0
+
+if(WLProbeCheckInProbe()==0) return 0	
+
+WLProbeSaveStartPointXYZ()
 
 dX=R*Math.cos(Ar)
 dY=R*Math.sin(Ar)
@@ -1155,6 +1283,11 @@ R=FILE.loadValue(WLProbeFileINI,"RotXYDialog/R",R);
 A=FILE.loadValue(WLProbeFileINI,"RotXYDialog/A",A);
 Depth=FILE.loadValue(WLProbeFileINI,"lastDialog/Depth",Depth);
 
+if(WLProbeFastDialog){
+WLProbeFastDialog = 0;	
+}
+else
+{
 R=DIALOG.enterNum("‚ведите ширину поиска =",R*2)/2
 if(DIALOG.isCancel()) return 0
 
@@ -1163,6 +1296,7 @@ if(DIALOG.isCancel()) return 0
 
 Depth=DIALOG.enterNum("Введите смещение плоскости поиска (ProbeZ)",Depth)
 if(DIALOG.isCancel()) return 0
+}
 
 FILE.saveValue(WLProbeFileINI,"RotXYDialog/R",R);
 FILE.saveValue(WLProbeFileINI,"RotXYDialog/A",A);
@@ -1332,6 +1466,10 @@ if(X0==X1||Y0==Y1)
   
 WLProbeInitValue()  
 
+if(WLProbeCheckInProbe()==0) return 0	
+
+WLProbeSaveStartPointXYZ()
+
 Fprobe=FILE.loadValue(WLProbeFileINI,"ProbePlane/F1Probe",F1Probe);	
        FILE.saveValue(WLProbeFileINI,"ProbePlane/F1Probe",F1Probe);			
 	   
@@ -1424,6 +1562,10 @@ if(X0==X1||Y0==Y1)
  SCRIPT.console("WLProbePlane error point")
  return 0
  }  
+  
+if(WLProbeCheckInProbe()==0) return 0	
+
+WLProbeSaveStartPointXYZ()
   
 WLProbeInitValue()  
 
@@ -1657,4 +1799,10 @@ FILE.saveValue(WLProbeFileINI,"ProbePlaneDialog/Depth",Depth);
 FILE.saveValue(WLProbeFileINI,"ProbePlaneDialog/nameFile",nameFile);		
 
 WLProbeHMap(X0,Y0,X1,Y1,Step,Depth)	
+
+if(!HMAP.isEnable())  
+  {
+  if(DIALOG.question("включиить использование карты высот?"))  
+	  HMAP.setEnable(1)
+  }
 }

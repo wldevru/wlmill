@@ -16,6 +16,9 @@ $sudo apt install libqt5qml5
 $sudo apt install libqt5quickwidgets5
 $sudo apt install qml-module-qtquick-controls
 $sudo apt install libsdl2
+$sudo apt install libqt5multimedia5-plugins
+$sudo apt install libqt5svg5-dev
+$sudo apt install libudev-dev
 
 3) Copy program folder
 4) run program in terminal mode
